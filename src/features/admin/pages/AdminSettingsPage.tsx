@@ -1,0 +1,15 @@
+import { useEffect, useState } from 'react'; import { api } from '@shared/api/client'; import { LoadingSpinner } from '@shared/components/LoadingSpinner';
+export function AdminSettingsPage() {
+  const [settings, setSettings] = useState<Record<string, unknown>>({}); const [loading, setLoading] = useState(true); const [saving, setSaving] = useState(false);
+  useEffect(() => { api<Record<string, string>>('/admin/settings').then((d) => { const p: Record<string, unknown> = {}; for (const [k, v] of Object.entries(d)) { try { p[k] = typeof v === 'string' ? JSON.parse(v) : v; } catch { p[k] = v; } } setSettings(p); }).catch(() => {}).finally(() => setLoading(false)); }, []);
+  const save = async () => { setSaving(true); try { const payload: Record<string, unknown> = {}; for (const [k, v] of Object.entries(settings)) { if (k === 'notification.default_timing') payload[k] = typeof v === 'string' ? v.split(',').map((s) => parseInt(s.trim(), 10)).filter((n) => !isNaN(n)) : v; else if (k === 'events.max_per_user') payload[k] = typeof v === 'string' ? parseInt(v, 10) : Number(v); else payload[k] = v; } await api('/admin/settings', { method: 'PUT', body: JSON.stringify(payload) }); alert('保存しました'); } catch { alert('保存に失敗しました'); } finally { setSaving(false); } };
+  const sv = (k: string, v: unknown) => { setSettings((prev) => ({ ...prev, [k]: v })); };
+  if (loading) return <LoadingSpinner />;
+  return (<div><h1 className="text-2xl font-bold mb-6">システム設定</h1><div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
+    <div><label className="block text-sm font-medium mb-1">アプリ名</label><input type="text" value={String(settings['app.name'] || '')} onChange={(e) => sv('app.name', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" /></div>
+    <div><label className="block text-sm font-medium mb-1">デフォルト通知タイミング（分、カンマ区切り）</label><input type="text" value={Array.isArray(settings['notification.default_timing']) ? (settings['notification.default_timing'] as number[]).join(',') : String(settings['notification.default_timing'] || '')} onChange={(e) => sv('notification.default_timing', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" /></div>
+    <div><label className="block text-sm font-medium mb-1">最大イベント数（0=無制限）</label><input type="number" value={Number(settings['events.max_per_user'] || 0)} onChange={(e) => sv('events.max_per_user', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" /></div>
+    <div className="flex items-center gap-2"><input type="checkbox" checked={Boolean(settings['users.allow_self_delete'])} onChange={(e) => sv('users.allow_self_delete', e.target.checked)} id="allowSelfDelete" /><label htmlFor="allowSelfDelete" className="text-sm">ユーザー自身のアカウント削除を許可</label></div>
+    <button onClick={save} disabled={saving} className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 text-sm">{saving ? '保存中...' : '設定を保存'}</button>
+  </div></div>);
+}
