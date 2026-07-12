@@ -95,7 +95,7 @@ async function refreshAccessToken(): Promise<boolean> {
   const refresh = getCurrentRefreshToken();
   if (!refresh) return false;
   try {
-    const res = await fetch(`\${API_BASE}/api/auth/refresh`, {
+    const res = await fetch(`${API_BASE}/api/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh_token: refresh }),
@@ -131,16 +131,16 @@ export async function api<T = unknown>(
 
   const token = getCurrentAccessToken();
   if (token) {
-    headers['Authorization'] = `Bearer \${token}`;
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
-  let res = await fetch(`\${API_BASE}/api\${path}`, { ...options, headers });
+  let res = await fetch(`${API_BASE}/api${path}`, { ...options, headers });
 
   if (res.status === 401 && getCurrentRefreshToken()) {
     const refreshed = await ensureValidToken();
     if (refreshed) {
-      headers['Authorization'] = `Bearer \${getCurrentAccessToken()}`;
-      res = await fetch(`\${API_BASE}/api\${path}`, { ...options, headers });
+      headers['Authorization'] = `Bearer ${getCurrentAccessToken()}`;
+      res = await fetch(`${API_BASE}/api${path}`, { ...options, headers });
     }
   }
 
@@ -151,7 +151,7 @@ export async function api<T = unknown>(
   const data = await res.json();
 
   if (!res.ok) {
-    const message = data.error || `API error: \${res.status}`;
+    const message = data.error || `API error: ${res.status}`;
     throw new Error(message);
   }
 
