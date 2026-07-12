@@ -15,7 +15,9 @@ function loadSessions(): Session[] {
   try {
     const raw = localStorage.getItem('miSchedule_sessions');
     return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 
 function saveSessions(sessions: Session[]) {
@@ -30,7 +32,9 @@ let activeIndex: number = (() => {
 
 let refreshPromise: Promise<boolean> | null = null;
 
-export function getSessions(): Session[] { return sessions; }
+export function getSessions(): Session[] {
+  return sessions;
+}
 
 export function getActiveSession(): Session | null {
   if (sessions.length === 0 || activeIndex >= sessions.length) return null;
@@ -38,7 +42,7 @@ export function getActiveSession(): Session | null {
 }
 
 export function addSession(session: Session) {
-  const existing = sessions.findIndex(s => s.userId === session.userId);
+  const existing = sessions.findIndex((s) => s.userId === session.userId);
   if (existing >= 0) {
     sessions[existing] = session;
   } else {
@@ -120,10 +124,7 @@ async function ensureValidToken(): Promise<boolean> {
   return result;
 }
 
-export async function api<T = unknown>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
+export async function api<T = unknown>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),

@@ -8,7 +8,10 @@ export function AccountSwitcher() {
   const [open, setOpen] = useState(false);
 
   const handleSwitch = async (index: number) => {
-    if (index === activeIndex) { setOpen(false); return; }
+    if (index === activeIndex) {
+      setOpen(false);
+      return;
+    }
     await switchAccount(index);
     setOpen(false);
     navigate('/');
@@ -35,9 +38,7 @@ export function AccountSwitcher() {
                 key={s.userId}
                 className={`flex items-center justify-between px-3 py-2 ${
                   sessions.length > 1 ? 'cursor-pointer hover:bg-gray-50' : 'cursor-default'
-                } ${
-                  i === activeIndex ? 'bg-blue-50' : ''
-                }`}
+                } ${i === activeIndex ? 'bg-blue-50' : ''}`}
                 onClick={() => sessions.length > 1 && handleSwitch(i)}
               >
                 <div className="flex items-center gap-2 min-w-0">
@@ -50,7 +51,9 @@ export function AccountSwitcher() {
                   )}
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{s.name}</p>
-                    <p className="text-xs text-gray-400 truncate">@{s.username}@{s.host}</p>
+                    <p className="text-xs text-gray-400 truncate">
+                      @{s.username}@{s.host}
+                    </p>
                   </div>
                 </div>
                 {sessions.length > 1 && (
@@ -68,7 +71,10 @@ export function AccountSwitcher() {
             ))}
             <div className="border-t mt-1 pt-1">
               <button
-                onClick={() => { setOpen(false); navigate('/login?add=1'); }}
+                onClick={() => {
+                  setOpen(false);
+                  navigate('/login?add=1');
+                }}
                 className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-gray-50"
               >
                 + アカウントを追加

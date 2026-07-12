@@ -55,10 +55,7 @@ export function CallbackPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
-          <button
-            onClick={() => navigate('/login')}
-            className="text-blue-600 hover:underline"
-          >
+          <button onClick={() => navigate('/login')} className="text-blue-600 hover:underline">
             ログインに戻る
           </button>
         </div>

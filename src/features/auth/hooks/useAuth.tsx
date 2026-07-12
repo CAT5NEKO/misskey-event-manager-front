@@ -1,7 +1,14 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import {
-  api, getSessions, getActiveSession, addSession, removeSession, switchSession,
-  clearAllSessions, getCurrentAccessToken, updateActiveTokens,
+  api,
+  getSessions,
+  getActiveSession,
+  addSession,
+  removeSession,
+  switchSession,
+  clearAllSessions,
+  getCurrentAccessToken,
+  updateActiveTokens,
 } from '@shared/api/client';
 import type { User, LoginResponse, CallbackResponse } from '@shared/types';
 
@@ -38,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const sessions = getSessions().map(s => ({
+  const sessions = getSessions().map((s) => ({
     userId: s.userId,
     name: s.name,
     username: s.username,
@@ -65,7 +72,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [activeIndex]);
 
-  useEffect(() => { fetchUser(); }, [fetchUser]);
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
 
   const login = async (host: string): Promise<LoginResponse> => {
     const res = await api<LoginResponse>('/auth/login', {
@@ -139,7 +148,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    try { await api('/auth/revoke', { method: 'POST' }); } catch {}
+    try {
+      await api('/auth/revoke', { method: 'POST' });
+    } catch {}
     removeSession(activeIndex);
     if (getSessions().length > 0) {
       const newIdx = Math.max(0, activeIndex - 1);
@@ -165,19 +176,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{
-      sessions,
-      activeIndex,
-      user,
-      loading,
-      login,
-      handleCallback,
-      handleAddAccountCallback,
-      switchAccount,
-      removeAccount: removeAccountHandler,
-      logout,
-      deleteAccount,
-    }}>
+    <AuthContext.Provider
+      value={{
+        sessions,
+        activeIndex,
+        user,
+        loading,
+        login,
+        handleCallback,
+        handleAddAccountCallback,
+        switchAccount,
+        removeAccount: removeAccountHandler,
+        logout,
+        deleteAccount,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

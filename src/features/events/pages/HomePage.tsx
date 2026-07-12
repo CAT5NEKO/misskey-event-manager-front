@@ -17,7 +17,7 @@ export function HomePage() {
     setLoading(true);
     try {
       const res = await api<{ events: Event[]; total_count: number }>(
-        `/events?page=${page}&limit=5&filter=${filter}&participating=${participating}`
+        `/events?page=${page}&limit=5&filter=${filter}&participating=${participating}`,
       );
       setEvents(res.events || []);
       setTotal(res.total_count || 0);
@@ -27,21 +27,29 @@ export function HomePage() {
     }
   };
 
-  useEffect(() => { fetchEvents(); }, [page, filter, participating]);
+  useEffect(() => {
+    fetchEvents();
+  }, [page, filter, participating]);
 
   const formatDate = (date: string | null) => {
     if (!date) return null;
     return new Date(date).toLocaleDateString('ja-JP', {
-      year: 'numeric', month: 'long', day: 'numeric',
-      hour: '2-digit', minute: '2-digit',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
   const statusLabel = (s: string) => {
     switch (s) {
-      case 'attending': return '参加';
-      case 'declined': return '不参加';
-      default: return s;
+      case 'attending':
+        return '参加';
+      case 'declined':
+        return '不参加';
+      default:
+        return s;
     }
   };
 
@@ -55,7 +63,8 @@ export function HomePage() {
   const eventStatusColor = (event: Event) => {
     if (event.status === 'cancelled') return 'bg-red-100 text-red-700';
     if (event.status === 'completed') return 'bg-gray-100 text-gray-600';
-    if (event.deadline && new Date(event.deadline) < new Date()) return 'bg-yellow-100 text-yellow-700';
+    if (event.deadline && new Date(event.deadline) < new Date())
+      return 'bg-yellow-100 text-yellow-700';
     return 'bg-blue-100 text-blue-700';
   };
 
@@ -65,23 +74,43 @@ export function HomePage() {
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl sm:text-2xl font-bold">イベント一覧</h1>
-          <Link to="/events/new"
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm">
+          <Link
+            to="/events/new"
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm"
+          >
             新規イベント
           </Link>
         </div>
 
         <div className="flex gap-2 mb-4 flex-wrap">
-          <button onClick={() => { setFilter('active'); setParticipating(false); setPage(1); }}
-            className={`px-3 py-1 rounded text-sm ${filter === 'active' && !participating ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
+          <button
+            onClick={() => {
+              setFilter('active');
+              setParticipating(false);
+              setPage(1);
+            }}
+            className={`px-3 py-1 rounded text-sm ${filter === 'active' && !participating ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+          >
             募集中
           </button>
-          <button onClick={() => { setFilter('past'); setParticipating(false); setPage(1); }}
-            className={`px-3 py-1 rounded text-sm ${filter === 'past' && !participating ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
+          <button
+            onClick={() => {
+              setFilter('past');
+              setParticipating(false);
+              setPage(1);
+            }}
+            className={`px-3 py-1 rounded text-sm ${filter === 'past' && !participating ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+          >
             過去の予定
           </button>
-          <button onClick={() => { setFilter('active'); setParticipating(true); setPage(1); }}
-            className={`px-3 py-1 rounded text-sm ${participating ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}>
+          <button
+            onClick={() => {
+              setFilter('active');
+              setParticipating(true);
+              setPage(1);
+            }}
+            className={`px-3 py-1 rounded text-sm ${participating ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+          >
             参加中
           </button>
         </div>
@@ -93,12 +122,17 @@ export function HomePage() {
         ) : (
           <div className="space-y-3">
             {events.map((event) => (
-              <Link key={event.id} to={`/events/${event.id}`}
-                className="block bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+              <Link
+                key={event.id}
+                to={`/events/${event.id}`}
+                className="block bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
+              >
                 <div className="flex items-start justify-between">
                   <div>
                     <h2 className="font-semibold text-lg">{event.title}</h2>
-                    {event.location && <p className="text-sm text-gray-500 mt-1">場所: {event.location}</p>}
+                    {event.location && (
+                      <p className="text-sm text-gray-500 mt-1">場所: {event.location}</p>
+                    )}
                     <div className="flex gap-4 mt-2 text-xs text-gray-400">
                       {event.deadline && <span>期限: {formatDate(event.deadline)}</span>}
                       {event.event_date && <span>予定日: {formatDate(event.event_date)}</span>}
@@ -106,14 +140,21 @@ export function HomePage() {
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     {event.current_user_status && (
-                      <span className={`text-xs px-2 py-0.5 rounded whitespace-nowrap ${
-                        event.current_user_status === 'attending' ? 'bg-green-100 text-green-700' :
-                        event.current_user_status === 'declined' ? 'bg-red-100 text-red-700' :
-                        'bg-gray-100 text-gray-600'}`}>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded whitespace-nowrap ${
+                          event.current_user_status === 'attending'
+                            ? 'bg-green-100 text-green-700'
+                            : event.current_user_status === 'declined'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
                         {statusLabel(event.current_user_status)}
                       </span>
                     )}
-                    <span className={`text-xs px-2 py-0.5 rounded whitespace-nowrap ${eventStatusColor(event)}`}>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded whitespace-nowrap ${eventStatusColor(event)}`}
+                    >
                       {eventStatusLabel(event)}
                     </span>
                   </div>
@@ -128,22 +169,35 @@ export function HomePage() {
 
         {total > 5 && (
           <div className="flex justify-center items-center gap-1 mt-6">
-            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}
-              className="px-2 py-1 bg-gray-200 rounded text-sm disabled:opacity-50 hover:bg-gray-300">前</button>
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="px-2 py-1 bg-gray-200 rounded text-sm disabled:opacity-50 hover:bg-gray-300"
+            >
+              前
+            </button>
             {Array.from({ length: Math.min(7, Math.ceil(total / 5)) }, (_, i) => {
               const start = Math.max(1, page - 3);
               const end = Math.min(Math.ceil(total / 5), start + 6);
               const p = start + i;
               if (p > end) return null;
               return (
-                <button key={p} onClick={() => setPage(p)}
-                  className={`w-8 h-8 rounded text-sm ${p === page ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`w-8 h-8 rounded text-sm ${p === page ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                >
                   {p}
                 </button>
               );
             })}
-            <button onClick={() => setPage((p) => p + 1)} disabled={page * 5 >= total}
-              className="px-2 py-1 bg-gray-200 rounded text-sm disabled:opacity-50 hover:bg-gray-300">次</button>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page * 5 >= total}
+              className="px-2 py-1 bg-gray-200 rounded text-sm disabled:opacity-50 hover:bg-gray-300"
+            >
+              次
+            </button>
           </div>
         )}
       </div>

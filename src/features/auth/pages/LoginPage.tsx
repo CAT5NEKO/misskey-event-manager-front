@@ -39,9 +39,7 @@ export function LoginPage() {
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Misskeyサーバー
-            </label>
+            <label className="block text-sm font-medium mb-1">Misskeyサーバー</label>
             <input
               type="text"
               value={host}
@@ -51,9 +49,7 @@ export function LoginPage() {
               required
             />
           </div>
-          {error && (
-            <p className="text-sm text-red-600">{error}</p>
-          )}
+          {error && <p className="text-sm text-red-600">{error}</p>}
           <button
             type="submit"
             disabled={loading}
@@ -63,7 +59,10 @@ export function LoginPage() {
           </button>
           {hasExistingSession && !isAddAccount && (
             <p className="text-xs text-gray-400 text-center mt-2">
-              別のアカウントを追加する場合は<a href="/login?add=1" className="text-blue-600 hover:underline">こちら</a>
+              別のアカウントを追加する場合は
+              <a href="/login?add=1" className="text-blue-600 hover:underline">
+                こちら
+              </a>
             </p>
           )}
         </form>
