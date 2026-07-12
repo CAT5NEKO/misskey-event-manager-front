@@ -102,6 +102,11 @@ export interface JoinEventInput {
   comment?: string;
 }
 
+export interface EventLimitInfo {
+  max: number;
+  current: number;
+}
+
 export interface AuditLogParams {
   page?: number;
   limit?: number;

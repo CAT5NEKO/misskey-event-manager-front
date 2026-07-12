@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '@shared/api/client';
-import type { CreateEventInput, UpdateEventInput, Event } from '@shared/types';
+import type { CreateEventInput, UpdateEventInput, Event, EventLimitInfo } from '@shared/types';
 import { Header } from '@shared/components/Header';
 import { LoadingSpinner } from '@shared/components/LoadingSpinner';
 
@@ -23,6 +23,7 @@ export function CreateEditEventPage() {
   const [fetchingEvent, setFetchingEvent] = useState(isEdit);
   const [error, setError] = useState('');
   const [touched, setTouched] = useState(false);
+  const [limitInfo, setLimitInfo] = useState<EventLimitInfo | null>(null);
 
   useEffect(() => {
     if (isEdit && id) {
@@ -42,6 +43,14 @@ export function CreateEditEventPage() {
         .finally(() => setFetchingEvent(false));
     }
   }, [isEdit, id, navigate]);
+
+  useEffect(() => {
+    if (!isEdit) {
+      api<EventLimitInfo>('/events/remaining')
+        .then(setLimitInfo)
+        .catch(() => {});
+    }
+  }, [isEdit]);
 
   const validation = useMemo(() => {
     const errors: string[] = [];
@@ -106,6 +115,8 @@ export function CreateEditEventPage() {
     return v ? <p className="text-xs text-red-500 mt-1">{v}</p> : null;
   };
 
+  const limitReached = !isEdit && limitInfo && limitInfo.max > 0 && limitInfo.current >= limitInfo.max;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -119,6 +130,11 @@ export function CreateEditEventPage() {
             className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4"
             onChange={() => setTouched(true)}
           >
+            {limitReached && (
+              <div className="text-sm text-red-600 bg-red-50 rounded p-3">
+                イベント数の上限（{limitInfo!.max}件）に達しています。新しいイベントを作成するには、既存のイベントを削除するか、完了/中止にしてください。
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium mb-1">タイトル *</label>
               <input
@@ -299,13 +315,28 @@ export function CreateEditEventPage() {
             )}
             {error && <p className="text-sm text-red-600 bg-red-50 rounded p-2">{error}</p>}
             <div className="flex gap-2 pt-2">
-              <button
-                type="submit"
-                disabled={loading || (touched && !validation.valid)}
-                className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? '保存中...' : '保存'}
-              </button>
+              {limitReached ? (
+                <div className="group relative inline-block">
+                  <button
+                    type="submit"
+                    disabled
+                    className="bg-blue-600 text-white px-6 py-2 rounded-md opacity-50 cursor-not-allowed"
+                  >
+                    {loading ? '保存中...' : '保存'}
+                  </button>
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                    イベント数の上限（{limitInfo!.max}件）に達しています
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={loading || (touched && !validation.valid)}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? '保存中...' : '保存'}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => navigate(-1)}

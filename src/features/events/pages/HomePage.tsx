@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '@shared/api/client';
-import type { Event } from '@shared/types';
+import type { Event, EventLimitInfo } from '@shared/types';
 import { Header } from '@shared/components/Header';
 import { LoadingSpinner } from '@shared/components/LoadingSpinner';
 
@@ -12,15 +12,17 @@ export function HomePage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('active');
   const [participating, setParticipating] = useState(false);
+  const [limitInfo, setLimitInfo] = useState<EventLimitInfo | null>(null);
 
   const fetchEvents = async () => {
     setLoading(true);
     try {
-      const res = await api<{ events: Event[]; total_count: number }>(
+      const res = await api<{ events: Event[]; total_count: number; event_limit?: EventLimitInfo }>(
         `/events?page=${page}&limit=5&filter=${filter}&participating=${participating}`,
       );
       setEvents(res.events || []);
       setTotal(res.total_count || 0);
+      setLimitInfo(res.event_limit || null);
     } catch {
     } finally {
       setLoading(false);
@@ -74,12 +76,27 @@ export function HomePage() {
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl sm:text-2xl font-bold">イベント一覧</h1>
-          <Link
-            to="/events/new"
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm"
-          >
-            新規イベント
-          </Link>
+          {limitInfo && limitInfo.max > 0 && limitInfo.current >= limitInfo.max ? (
+            <div className="group relative inline-block">
+              <Link
+                to="/events/new"
+                className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm opacity-50 pointer-events-none"
+                aria-disabled="true"
+              >
+                新規イベント
+              </Link>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                イベント数の上限（{limitInfo.max}件）に達しています
+              </div>
+            </div>
+          ) : (
+            <Link
+              to="/events/new"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm"
+            >
+              新規イベント
+            </Link>
+          )}
         </div>
 
         <div className="flex gap-2 mb-4 flex-wrap">
