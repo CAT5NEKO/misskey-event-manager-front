@@ -27,7 +27,7 @@ export function CreateEditEventPage() {
   useEffect(() => {
     if (isEdit && id) {
       setFetchingEvent(true);
-      api<Event>(`/events/\${id}`).then((e) => {
+      api<Event>(`/events/${id}`).then((e) => {
         setTitle(e.title); setDescription(e.description || '');
         setLocation(e.location || ''); setNotes(e.notes || '');
         setEventDate(e.event_date ? e.event_date.slice(0, 16) : '');
@@ -58,12 +58,12 @@ export function CreateEditEventPage() {
     try {
       if (isEdit && id) {
         const inp: UpdateEventInput = { title, description: description || undefined, location: location || undefined, notes: notes || undefined, event_date: eventDate ? new Date(eventDate).toISOString() : undefined, deadline: deadline ? new Date(deadline).toISOString() : undefined, notification_timing: timing, status };
-        await api(`/events/\${id}`, { method: 'PUT', body: JSON.stringify(inp) });
+        await api(`/events/${id}`, { method: 'PUT', body: JSON.stringify(inp) });
       } else {
         const inp: CreateEventInput = { title, description: description || undefined, location: location || undefined, notes: notes || undefined, event_date: eventDate ? new Date(eventDate).toISOString() : undefined, deadline: deadline ? new Date(deadline).toISOString() : undefined, notification_timing: timing };
         await api('/events', { method: 'POST', body: JSON.stringify(inp) });
       }
-      navigate(isEdit ? `/events/\${id}` : '/');
+      navigate(isEdit ? `/events/${id}` : '/');
     } catch (err) { setError(err instanceof Error ? err.message : '保存に失敗しました'); }
     finally { setLoading(false); }
   };
@@ -91,13 +91,13 @@ export function CreateEditEventPage() {
               <div><label className="block text-sm font-medium mb-1">回答期限</label><input type="datetime-local" value={deadline} onChange={(e) => { setDeadline(e.target.value); setTouched(true); }} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />{fieldError('回答期限')}</div>
             </div>
             <div><label className="block text-sm font-medium mb-1">通知タイミング（期限前）</label>
-              <div className="flex flex-wrap gap-2 mb-2">{[ { label: '1時間前', value: 60 }, { label: '1日前', value: 1440 }, { label: '3日前', value: 4320 }].map((preset) => { const active = notifTiming.includes(preset.value); return (<button key={preset.value} type="button" onClick={() => { if (active) setNotifTiming(notifTiming.filter((v) => v !== preset.value)); else setNotifTiming([...notifTiming, preset.value]); }} className={`px-3 py-1.5 rounded text-sm border \${active ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>{preset.label}</button>); })}</div>
+              <div className="flex flex-wrap gap-2 mb-2">{[ { label: '1時間前', value: 60 }, { label: '1日前', value: 1440 }, { label: '3日前', value: 4320 }].map((preset) => { const active = notifTiming.includes(preset.value); return (<button key={preset.value} type="button" onClick={() => { if (active) setNotifTiming(notifTiming.filter((v) => v !== preset.value)); else setNotifTiming([...notifTiming, preset.value]); }} className={`px-3 py-1.5 rounded text-sm border ${active ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>{preset.label}</button>); })}</div>
               <div className="flex gap-2 items-center">
                 <input type="number" value={customTiming} onChange={(e) => setCustomTiming(e.target.value)} className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" min="1" />
                 <select value={timingUnit} onChange={(e) => setTimingUnit(e.target.value)} className="px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"><option value="1">分</option><option value="60">時間</option><option value="1440">日</option><option value="10080">週間</option></select>
                 <button type="button" onClick={() => { const num = parseInt(customTiming, 10); const unit = parseInt(timingUnit, 10); if (!isNaN(num) && num > 0) { const v = num * unit; if (!notifTiming.includes(v)) { setNotifTiming([...notifTiming, v]); setCustomTiming(''); } }}} className="bg-gray-200 text-gray-700 px-3 py-2 rounded-md hover:bg-gray-300 text-sm shrink-0">追加</button>
               </div>
-              {notifTiming.length > 0 && (<div className="flex flex-wrap gap-1 mt-2">{notifTiming.map((v) => { const label = v >= 10080 ? `\${v / 10080}週間前` : v >= 1440 ? `\${v / 1440}日前` : v >= 60 ? `\${v / 60}時間前` : `\${v}分前`; return (<span key={v} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded">{label}<button type="button" onClick={() => setNotifTiming(notifTiming.filter((x) => x !== v))} className="hover:text-red-500">&times;</button></span>); })}</div>)}
+              {notifTiming.length > 0 && (<div className="flex flex-wrap gap-1 mt-2">{notifTiming.map((v) => { const label = v >= 10080 ? `${v / 10080}週間前` : v >= 1440 ? `${v / 1440}日前` : v >= 60 ? `${v / 60}時間前` : `${v}分前`; return (<span key={v} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded">{label}<button type="button" onClick={() => setNotifTiming(notifTiming.filter((x) => x !== v))} className="hover:text-red-500">&times;</button></span>); })}</div>)}
             </div>
             {isEdit && (<div><label className="block text-sm font-medium mb-1">ステータス</label><select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"><option value="active">募集中</option><option value="cancelled">中止</option><option value="completed">終了</option></select></div>)}
             {error && <p className="text-sm text-red-600 bg-red-50 rounded p-2">{error}</p>}
