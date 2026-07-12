@@ -11,11 +11,14 @@ npm install
 npm run dev
 ```
 
-### 設定
+### 環境変数
 
-環境変数VITE_API_URLにバックエンドAPIのURLを指定します。  
-デフォルトはhttp://localhost:8080です。  
-.env.developmentファイルで開発時の値を変更できます。  
+`VITE_API_URL` でバックエンドAPIのURLを指定します（デフォルト: `http://localhost:8080`）。
 
-尚、本リポジトリはNetlifyでデプロイするように設計して作ってあるので、ローカルで適用する場合は適宜調整してください。
+| ファイル               | 用途                                    |
+|------------------------|-----------------------------------------|
+| `.env.development`     | 開発時（`npm run dev`）に読み込まれる    |
+| `.env.production`      | 本番ビルド時（`npm run build`）に読み込まれる |
+
+本リポジトリはNetlifyでのデプロイを前提としています（`netlify.toml` にビルド設定あり）。Netlifyは `npm run build` で本番ビルドを行うため、本番用のAPI URLは `.env.production` に設定してください。
 
