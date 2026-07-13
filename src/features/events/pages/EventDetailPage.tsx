@@ -17,24 +17,31 @@ export function EventDetailPage() {
   const [comment, setComment] = useState('');
   const [savingComment, setSavingComment] = useState(false);
   const shareLabelRef = useRef<HTMLSpanElement>(null);
+  const mountedRef = useRef(true);
 
   const fetchEvent = async () => {
     try {
       const e = await api<Event>(`/events/${id}`);
+      if (!mountedRef.current) return;
       setEvent(e);
       document.title = `${e.title} - miSchedule`;
       const my = e.participants?.find((p) => p.user_id === user?.id);
       setComment(my?.comment || '');
       setShowComment(false);
     } catch {
-      navigate('/');
+      if (mountedRef.current) navigate('/');
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   };
 
   useEffect(() => {
+    mountedRef.current = true;
     fetchEvent();
+    return () => {
+      mountedRef.current = false;
+      document.title = 'miSchedule';
+    };
   }, [id]);
 
   const handleShare = async () => {
