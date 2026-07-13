@@ -13,6 +13,7 @@ export function EventDetailPage() {
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
+  const [comment, setComment] = useState('');
   const shareLabelRef = useRef<HTMLSpanElement>(null);
 
   const fetchEvent = async () => {
@@ -20,6 +21,8 @@ export function EventDetailPage() {
       const e = await api<Event>(`/events/${id}`);
       setEvent(e);
       document.title = `${e.title} - miSchedule`;
+      const my = e.participants?.find((p) => p.user_id === user?.id);
+      setComment(my?.comment || '');
     } catch {
       navigate('/');
     } finally {
@@ -48,7 +51,10 @@ export function EventDetailPage() {
     if (!id) return;
     setJoining(true);
     try {
-      await api(`/events/${id}/join`, { method: 'POST', body: JSON.stringify({ status }) });
+      await api(`/events/${id}/join`, {
+        method: 'POST',
+        body: JSON.stringify({ status, comment: comment || undefined }),
+      });
       await fetchEvent();
     } catch {
     } finally {
@@ -214,53 +220,65 @@ export function EventDetailPage() {
           </dl>
 
           {event.status === 'active' && !isExpired && (
-            <div className="mt-6 pt-4 border-t flex gap-2">
-              {event.current_user_status ? (
-                <>
-                  {event.current_user_status === 'attending' && (
+            <div className="mt-6 pt-4 border-t">
+              <div className="flex flex-wrap gap-2">
+                {event.current_user_status ? (
+                  <>
+                    {event.current_user_status === 'attending' && (
+                      <button
+                        onClick={() => handleJoin('declined')}
+                        disabled={joining}
+                        className="text-sm text-red-600 hover:underline"
+                      >
+                        不参加にする
+                      </button>
+                    )}
+                    {event.current_user_status === 'declined' && (
+                      <button
+                        onClick={() => handleJoin('attending')}
+                        disabled={joining}
+                        className="text-sm text-green-600 hover:underline"
+                      >
+                        参加にする
+                      </button>
+                    )}
                     <button
-                      onClick={() => handleJoin('declined')}
+                      onClick={handleLeave}
                       disabled={joining}
-                      className="text-sm text-red-600 hover:underline"
+                      className="text-sm text-gray-500 hover:underline"
                     >
-                      不参加にする
+                      回答を取り消す
                     </button>
-                  )}
-                  {event.current_user_status === 'declined' && (
+                  </>
+                ) : !isCreator ? (
+                  <>
                     <button
                       onClick={() => handleJoin('attending')}
                       disabled={joining}
-                      className="text-sm text-green-600 hover:underline"
+                      className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm"
                     >
-                      参加にする
+                      参加する
                     </button>
-                  )}
-                  <button
-                    onClick={handleLeave}
-                    disabled={joining}
-                    className="text-sm text-gray-500 hover:underline"
-                  >
-                    回答を取り消す
-                  </button>
-                </>
-              ) : !isCreator ? (
-                <>
-                  <button
-                    onClick={() => handleJoin('attending')}
-                    disabled={joining}
-                    className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm"
-                  >
-                    参加する
-                  </button>
-                  <button
-                    onClick={() => handleJoin('declined')}
-                    disabled={joining}
-                    className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 text-sm"
-                  >
-                    不参加
-                  </button>
-                </>
-              ) : null}
+                    <button
+                      onClick={() => handleJoin('declined')}
+                      disabled={joining}
+                      className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 text-sm"
+                    >
+                      不参加
+                    </button>
+                  </>
+                ) : null}
+              </div>
+              {!isCreator && (
+                <input
+                  type="text"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="一言コメント（任意）"
+                  maxLength={200}
+                  className="mt-2 w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              )}
             </div>
           )}
         </div>
