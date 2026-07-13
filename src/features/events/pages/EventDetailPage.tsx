@@ -147,22 +147,20 @@ export function EventDetailPage() {
           <div className="flex items-start justify-between mb-4">
             <h1 className="text-xl sm:text-2xl font-bold">{event.title}</h1>
             <div className="flex gap-2 items-center">
-              <div className="group relative">
-                <button
-                  onClick={handleShare}
-                  className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                    />
-                  </svg>
-                  <span ref={shareLabelRef}>共有</span>
-                </button>
-              </div>
+              <button
+                onClick={handleShare}
+                className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                  />
+                </svg>
+                <span ref={shareLabelRef}>共有</span>
+              </button>
               {(isCreator || isAdmin) && !isExpired && (
                 <Link
                   to={`/events/${event.id}/edit`}
@@ -289,32 +287,34 @@ export function EventDetailPage() {
               {!isCreator && event.current_user_status && (
                 <div className="mt-2">
                   {showComment ? (
-                    <div className="flex gap-2 items-start">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <input
                         type="text"
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
                         placeholder="一言コメント"
-                        maxLength={200}
+                        maxLength={50}
                         className="flex-1 px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
-                      <button
-                        onClick={handleSaveComment}
-                        disabled={savingComment}
-                        className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700 disabled:opacity-50 shrink-0"
-                      >
-                        {savingComment ? '保存中' : '保存'}
-                      </button>
-                      <button
-                        onClick={() => {
-                          const my = event.participants?.find((p) => p.user_id === user?.id);
-                          setComment(my?.comment || '');
-                          setShowComment(false);
-                        }}
-                        className="text-sm text-gray-500 hover:text-gray-700 shrink-0 py-1.5"
-                      >
-                        取消
-                      </button>
+                      <div className="flex gap-2 shrink-0">
+                        <button
+                          onClick={handleSaveComment}
+                          disabled={savingComment}
+                          className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          {savingComment ? '保存中' : '保存'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            const my = event.participants?.find((p) => p.user_id === user?.id);
+                            setComment(my?.comment || '');
+                            setShowComment(false);
+                          }}
+                          className="text-sm text-gray-500 hover:text-gray-700 py-1.5"
+                        >
+                          取消
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <button
