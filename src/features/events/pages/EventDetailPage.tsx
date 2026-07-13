@@ -78,6 +78,21 @@ export function EventDetailPage() {
     }
   };
 
+  const handleDeleteComment = async () => {
+    if (!id || !event?.current_user_status) return;
+    setSavingComment(true);
+    try {
+      await api(`/events/${id}/join`, {
+        method: 'POST',
+        body: JSON.stringify({ status: event.current_user_status, comment: '' }),
+      });
+      await fetchEvent();
+    } catch {
+    } finally {
+      setSavingComment(false);
+    }
+  };
+
   const handleLeave = async () => {
     if (!id) return;
     setJoining(true);
@@ -310,14 +325,11 @@ export function EventDetailPage() {
                           {savingComment ? '保存中' : '保存'}
                         </button>
                         <button
-                          onClick={() => {
-                            const my = event.participants?.find((p) => p.user_id === user?.id);
-                            setComment(my?.comment || '');
-                            setShowComment(false);
-                          }}
-                          className="text-sm text-gray-500 hover:text-gray-700 py-1.5"
+                          onClick={handleDeleteComment}
+                          disabled={savingComment}
+                          className="text-sm text-red-500 hover:text-red-700 py-1.5"
                         >
-                          取消
+                          削除
                         </button>
                       </div>
                     </div>
