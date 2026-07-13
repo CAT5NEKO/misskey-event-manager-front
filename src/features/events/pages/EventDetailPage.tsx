@@ -13,7 +13,9 @@ export function EventDetailPage() {
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
+  const [showComment, setShowComment] = useState(false);
   const [comment, setComment] = useState('');
+  const [savingComment, setSavingComment] = useState(false);
   const shareLabelRef = useRef<HTMLSpanElement>(null);
 
   const fetchEvent = async () => {
@@ -23,6 +25,7 @@ export function EventDetailPage() {
       document.title = `${e.title} - miSchedule`;
       const my = e.participants?.find((p) => p.user_id === user?.id);
       setComment(my?.comment || '');
+      setShowComment(false);
     } catch {
       navigate('/');
     } finally {
@@ -51,14 +54,27 @@ export function EventDetailPage() {
     if (!id) return;
     setJoining(true);
     try {
-      await api(`/events/${id}/join`, {
-        method: 'POST',
-        body: JSON.stringify({ status, comment: comment || undefined }),
-      });
+      await api(`/events/${id}/join`, { method: 'POST', body: JSON.stringify({ status }) });
       await fetchEvent();
     } catch {
     } finally {
       setJoining(false);
+    }
+  };
+
+  const handleSaveComment = async () => {
+    if (!id || !event?.current_user_status) return;
+    setSavingComment(true);
+    try {
+      await api(`/events/${id}/join`, {
+        method: 'POST',
+        body: JSON.stringify({ status: event.current_user_status, comment: comment || '' }),
+      });
+      setShowComment(false);
+      await fetchEvent();
+    } catch {
+    } finally {
+      setSavingComment(false);
     }
   };
 
@@ -269,15 +285,46 @@ export function EventDetailPage() {
                   </>
                 ) : null}
               </div>
-              {!isCreator && (
-                <input
-                  type="text"
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="一言コメント（任意）"
-                  maxLength={200}
-                  className="mt-2 w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+
+              {!isCreator && event.current_user_status && (
+                <div className="mt-2">
+                  {showComment ? (
+                    <div className="flex gap-2 items-start">
+                      <input
+                        type="text"
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        placeholder="一言コメント"
+                        maxLength={200}
+                        className="flex-1 px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <button
+                        onClick={handleSaveComment}
+                        disabled={savingComment}
+                        className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700 disabled:opacity-50 shrink-0"
+                      >
+                        {savingComment ? '保存中' : '保存'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          const my = event.participants?.find((p) => p.user_id === user?.id);
+                          setComment(my?.comment || '');
+                          setShowComment(false);
+                        }}
+                        className="text-sm text-gray-500 hover:text-gray-700 shrink-0 py-1.5"
+                      >
+                        取消
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowComment(true)}
+                      className="text-sm text-gray-400 hover:text-blue-600"
+                    >
+                      {comment ? 'コメントを編集' : '+ 一言コメント'}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           )}
