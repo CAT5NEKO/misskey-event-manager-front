@@ -288,14 +288,19 @@ export function EventDetailPage() {
                 <div className="mt-2">
                   {showComment ? (
                     <div className="flex flex-col sm:flex-row gap-2">
-                      <input
-                        type="text"
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
-                        placeholder="一言コメント"
-                        maxLength={50}
-                        className="flex-1 px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={comment}
+                          onChange={(e) => setComment(e.target.value)}
+                          placeholder="一言コメント"
+                          maxLength={50}
+                          className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <div className="text-xs text-gray-400 text-right mt-0.5">
+                          {comment.length}/50
+                        </div>
+                      </div>
                       <div className="flex gap-2 shrink-0">
                         <button
                           onClick={handleSaveComment}
@@ -343,34 +348,33 @@ export function EventDetailPage() {
                 </span>
               </div>
               {event.participants.map((p) => (
-                <div
-                  key={p.id}
-                  className="flex items-center justify-between py-2 border-b last:border-0"
-                >
-                  <div className="flex items-center gap-3">
-                    {p.user?.avatar_url ? (
-                      <img
-                        src={p.user.avatar_url}
-                        alt=""
-                        className="w-8 h-8 rounded-full bg-gray-200"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-500 text-xs font-bold">
-                        {(p.user?.name || '?')[0]}
-                      </div>
-                    )}
-                    <span className="font-medium text-sm">{p.user?.name || 'Unknown'}</span>
-                    {p.comment && <span className="text-xs text-gray-400">{p.comment}</span>}
+                <div key={p.id} className="py-2 border-b last:border-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {p.user?.avatar_url ? (
+                        <img
+                          src={p.user.avatar_url}
+                          alt=""
+                          className="w-8 h-8 rounded-full bg-gray-200 shrink-0"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-500 text-xs font-bold shrink-0">
+                          {(p.user?.name || '?')[0]}
+                        </div>
+                      )}
+                      <span className="font-medium text-sm">{p.user?.name || 'Unknown'}</span>
+                    </div>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded shrink-0 ${p.status === 'attending' ? 'bg-green-100 text-green-700' : p.status === 'declined' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}
+                    >
+                      {p.status === 'attending'
+                        ? '参加'
+                        : p.status === 'declined'
+                          ? '不参加'
+                          : p.status}
+                    </span>
                   </div>
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded ${p.status === 'attending' ? 'bg-green-100 text-green-700' : p.status === 'declined' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}
-                  >
-                    {p.status === 'attending'
-                      ? '参加'
-                      : p.status === 'declined'
-                        ? '不参加'
-                        : p.status}
-                  </span>
+                  {p.comment && <p className="text-xs text-gray-400 mt-0.5 ml-11">{p.comment}</p>}
                 </div>
               ))}
             </div>
