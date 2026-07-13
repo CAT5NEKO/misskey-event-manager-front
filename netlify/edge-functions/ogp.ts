@@ -1,3 +1,5 @@
+declare const Netlify: { env: { get(key: string): string | undefined } };
+
 export default async function handler(request: Request, context: { params: { id?: string }; next: () => Response }) {
   const ua = (request.headers.get("user-agent") || "").toLowerCase();
   const isCrawler = /bot|crawler|twitter|facebook|discord|slack|telegram|whatsapp|embedly|iframely|ogp/i.test(ua);
