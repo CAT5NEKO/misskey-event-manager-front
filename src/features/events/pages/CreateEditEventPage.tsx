@@ -115,7 +115,12 @@ export function CreateEditEventPage() {
     return v ? <p className="text-xs text-red-500 mt-1">{v}</p> : null;
   };
 
-  const limitReached = !isEdit && limitInfo && limitInfo.max > 0 && limitInfo.current >= limitInfo.max;
+  const limitReached =
+    !isEdit && limitInfo && limitInfo.max > 0 && limitInfo.current >= limitInfo.max;
+
+  const limitMessage = limitReached
+    ? `イベント数の上限（${limitInfo!.max}件）に達しています。新しいイベントを作成するには、既存のイベントを削除するか、完了/中止にしてください。`
+    : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -131,9 +136,7 @@ export function CreateEditEventPage() {
             onChange={() => setTouched(true)}
           >
             {limitReached && (
-              <div className="text-sm text-red-600 bg-red-50 rounded p-3">
-                イベント数の上限（{limitInfo!.max}件）に達しています。新しいイベントを作成するには、既存のイベントを削除するか、完了/中止にしてください。
-              </div>
+              <div className="text-sm text-red-600 bg-red-50 rounded p-3">{limitMessage}</div>
             )}
             <div>
               <label className="block text-sm font-medium mb-1">タイトル *</label>
