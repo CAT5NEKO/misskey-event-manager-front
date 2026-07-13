@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '@shared/api/client';
 import type { CreateEventInput, UpdateEventInput, Event, EventLimitInfo } from '@shared/types';
@@ -24,12 +24,15 @@ export function CreateEditEventPage() {
   const [error, setError] = useState('');
   const [touched, setTouched] = useState(false);
   const [limitInfo, setLimitInfo] = useState<EventLimitInfo | null>(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
+    mountedRef.current = true;
     if (isEdit && id) {
       setFetchingEvent(true);
       api<Event>(`/events/${id}`)
         .then((e) => {
+          if (!mountedRef.current) return;
           setTitle(e.title);
           setDescription(e.description || '');
           setLocation(e.location || '');
@@ -39,9 +42,16 @@ export function CreateEditEventPage() {
           setNotifTiming(e.notification_timing);
           setStatus(e.status);
         })
-        .catch(() => navigate('/'))
-        .finally(() => setFetchingEvent(false));
+        .catch(() => {
+          if (mountedRef.current) navigate('/');
+        })
+        .finally(() => {
+          if (mountedRef.current) setFetchingEvent(false);
+        });
     }
+    return () => {
+      mountedRef.current = false;
+    };
   }, [isEdit, id, navigate]);
 
   useEffect(() => {
