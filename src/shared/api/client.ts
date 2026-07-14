@@ -125,6 +125,11 @@ async function refreshAccessToken(): Promise<boolean> {
       activeIndex = loadActiveIndex();
       return getCurrentAccessToken() != null;
     }
+    if (res.status === 401) {
+      removeSession(activeIndex);
+      window.dispatchEvent(new CustomEvent('miSchedule:sessionExpired'));
+      return false;
+    }
     if (!res.ok) return false;
     const data = await res.json();
     updateActiveTokens(data.jwt, data.refresh_token);
