@@ -7,7 +7,10 @@ export function LoginPage() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const isAddAccount = searchParams.get('add') === '1';
-  const reason = (location.state as { reason?: string } | null)?.reason;
+  const reason =
+    searchParams.get('reason') === 'session_expired'
+      ? 'セッションの有効期限が切れました'
+      : (location.state as { reason?: string } | null)?.reason;
   const hasExistingSession = getSessions().length > 0;
 
   const [host, setHost] = useState('');

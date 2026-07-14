@@ -127,7 +127,6 @@ async function refreshAccessToken(): Promise<boolean> {
     }
     if (res.status === 401) {
       removeSession(activeIndex);
-      window.dispatchEvent(new CustomEvent('miSchedule:sessionExpired'));
       return false;
     }
     if (!res.ok) return false;
@@ -165,6 +164,9 @@ export async function api<T = unknown>(path: string, options: RequestInit = {}):
     if (refreshed) {
       headers['Authorization'] = `Bearer ${getCurrentAccessToken()}`;
       res = await fetch(`${API_BASE}/api${path}`, { ...options, headers });
+    } else if (!getCurrentAccessToken()) {
+      window.location.assign('/login?reason=session_expired');
+      return {} as T;
     }
   }
 

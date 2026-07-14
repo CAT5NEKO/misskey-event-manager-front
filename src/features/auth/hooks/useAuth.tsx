@@ -73,12 +73,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetchUser();
   }, [fetchUser]);
 
-  useEffect(() => {
-    const handler = () => setUser(null);
-    window.addEventListener('miSchedule:sessionExpired', handler);
-    return () => window.removeEventListener('miSchedule:sessionExpired', handler);
-  }, []);
-
   const login = async (host: string): Promise<LoginResponse> => {
     const res = await api<LoginResponse>('/auth/login', {
       method: 'POST',
