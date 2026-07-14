@@ -121,9 +121,11 @@ async function refreshAccessToken(): Promise<boolean> {
       body: JSON.stringify({ refresh_token: refresh }),
     });
     if (res.status === 403) {
+      const prevToken = getCurrentAccessToken();
       sessions = loadSessions();
       activeIndex = loadActiveIndex();
-      return getCurrentAccessToken() != null;
+      const nextToken = getCurrentAccessToken();
+      return nextToken !== null && nextToken !== prevToken;
     }
     if (res.status === 401) {
       removeSession(activeIndex);
