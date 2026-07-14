@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { getSessions } from '@shared/api/client';
 
 export function LoginPage() {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const isAddAccount = searchParams.get('add') === '1';
+  const reason = (location.state as { reason?: string } | null)?.reason;
   const hasExistingSession = getSessions().length > 0;
 
   const [host, setHost] = useState('');
@@ -34,6 +36,7 @@ export function LoginPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold text-center mb-6">miSchedule</h1>
+        {reason && <p className="text-sm text-amber-600 bg-amber-50 rounded p-3 mb-4">{reason}</p>}
         <p className="text-sm text-gray-600 text-center mb-6">
           {isAddAccount ? 'アカウントを追加' : 'Misskeyアカウントでログイン'}
         </p>

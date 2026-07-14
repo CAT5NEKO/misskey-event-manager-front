@@ -30,6 +30,20 @@ let activeIndex: number = (() => {
   return idx ? parseInt(idx, 10) : 0;
 })();
 
+function loadActiveIndex(): number {
+  const idx = localStorage.getItem('miSchedule_active');
+  return idx ? parseInt(idx, 10) : 0;
+}
+
+window.addEventListener('storage', (e) => {
+  if (e.key === 'miSchedule_sessions') {
+    sessions = loadSessions();
+  }
+  if (e.key === 'miSchedule_active') {
+    activeIndex = loadActiveIndex();
+  }
+});
+
 let refreshPromise: Promise<boolean> | null = null;
 
 export function getSessions(): Session[] {
@@ -96,6 +110,8 @@ export function updateActiveTokens(jwt: string, refreshToken: string) {
 }
 
 async function refreshAccessToken(): Promise<boolean> {
+  sessions = loadSessions();
+  activeIndex = loadActiveIndex();
   const refresh = getCurrentRefreshToken();
   if (!refresh) return false;
   try {
@@ -104,10 +120,12 @@ async function refreshAccessToken(): Promise<boolean> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh_token: refresh }),
     });
-    if (!res.ok) {
-      removeSession(activeIndex);
-      return false;
+    if (res.status === 403) {
+      sessions = loadSessions();
+      activeIndex = loadActiveIndex();
+      return getCurrentAccessToken() != null;
     }
+    if (!res.ok) return false;
     const data = await res.json();
     updateActiveTokens(data.jwt, data.refresh_token);
     return true;

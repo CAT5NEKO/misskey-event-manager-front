@@ -2,7 +2,6 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import {
   api,
   getSessions,
-  getActiveSession,
   addSession,
   removeSession,
   switchSession,
@@ -64,8 +63,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const u = await api<User>('/auth/me');
       setUser(u);
     } catch {
-      const s = getActiveSession();
-      if (s) removeSession(activeIndex);
       setUser(null);
     } finally {
       setLoading(false);

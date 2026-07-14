@@ -22,14 +22,14 @@ import { AdminSettingsPage } from '@features/admin/pages/AdminSettingsPage';
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <LoadingSpinner />;
-  if (!user) return <Navigate to="/login" />;
+  if (!user) return <Navigate to="/login" state={{ reason: 'セッションの有効期限が切れました' }} />;
   return <>{children}</>;
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <LoadingSpinner />;
-  if (!user) return <Navigate to="/login" />;
+  if (!user) return <Navigate to="/login" state={{ reason: 'セッションの有効期限が切れました' }} />;
   if (!user.is_admin) return <Navigate to="/" />;
   return <>{children}</>;
 }
