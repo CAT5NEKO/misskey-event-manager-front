@@ -22,6 +22,7 @@ export interface Event {
   deadline: string | null;
   notification_timing: number[];
   status: string;
+  link_only: boolean;
   created_at: string;
   updated_at: string;
   creator?: User;
@@ -84,6 +85,7 @@ export interface CreateEventInput {
   event_date?: string;
   deadline?: string;
   notification_timing?: number[];
+  link_only?: boolean;
 }
 
 export interface UpdateEventInput {
@@ -95,6 +97,7 @@ export interface UpdateEventInput {
   deadline?: string;
   notification_timing?: number[];
   status?: string;
+  link_only?: boolean;
 }
 
 export interface JoinEventInput {

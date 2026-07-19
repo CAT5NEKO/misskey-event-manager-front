@@ -19,6 +19,7 @@ export function CreateEditEventPage() {
   const [customTiming, setCustomTiming] = useState('');
   const [timingUnit, setTimingUnit] = useState('60');
   const [status, setStatus] = useState('active');
+  const [linkOnly, setLinkOnly] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetchingEvent, setFetchingEvent] = useState(isEdit);
   const [error, setError] = useState('');
@@ -41,6 +42,7 @@ export function CreateEditEventPage() {
           setDeadline(e.deadline ? e.deadline.slice(0, 16) : '');
           setNotifTiming(e.notification_timing);
           setStatus(e.status);
+          setLinkOnly(e.link_only ?? false);
         })
         .catch(() => {
           if (mountedRef.current) navigate('/');
@@ -97,6 +99,7 @@ export function CreateEditEventPage() {
           deadline: deadline ? new Date(deadline).toISOString() : undefined,
           notification_timing: timing,
           status,
+          link_only: linkOnly,
         };
         await api(`/events/${id}`, { method: 'PUT', body: JSON.stringify(inp) });
       } else {
@@ -108,6 +111,7 @@ export function CreateEditEventPage() {
           event_date: eventDate ? new Date(eventDate).toISOString() : undefined,
           deadline: deadline ? new Date(deadline).toISOString() : undefined,
           notification_timing: timing,
+          link_only: linkOnly,
         };
         await api('/events', { method: 'POST', body: JSON.stringify(inp) });
       }
@@ -311,6 +315,23 @@ export function CreateEditEventPage() {
                   })}
                 </div>
               )}
+            </div>
+            <div className="flex items-center gap-3 py-1">
+              <label
+                className="text-sm font-medium select-none cursor-pointer"
+                title="オンにすると一覧に表示されず、リンクを知っている人のみ参加できます"
+              >
+                リンクでのみ公開する
+              </label>
+              <button
+                type="button"
+                onClick={() => setLinkOnly(!linkOnly)}
+                className={`relative w-10 h-6 rounded-full transition-colors ${linkOnly ? 'bg-blue-600' : 'bg-gray-300'}`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${linkOnly ? 'translate-x-4' : ''}`}
+                />
+              </button>
             </div>
             {isEdit && (
               <div>
