@@ -317,10 +317,7 @@ export function CreateEditEventPage() {
               )}
             </div>
             <div className="flex items-center gap-3 py-1">
-              <label
-                className="text-sm font-medium select-none cursor-pointer"
-                title="オンにすると一覧に表示されず、リンクを知っている人のみ参加できます"
-              >
+              <label className="text-sm font-medium select-none cursor-pointer">
                 リンクでのみ公開する
               </label>
               <button
@@ -333,6 +330,9 @@ export function CreateEditEventPage() {
                 />
               </button>
             </div>
+            <p className="text-xs text-gray-400 -mt-2 mb-1">
+              オンにすると募集中一覧に表示されず、リンクを知っている人のみ参加できます
+            </p>
             {isEdit && (
               <div>
                 <label className="block text-sm font-medium mb-1">ステータス</label>
