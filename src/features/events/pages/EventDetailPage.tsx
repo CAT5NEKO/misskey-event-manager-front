@@ -261,22 +261,58 @@ export function EventDetailPage() {
                 {event.current_user_status ? (
                   <>
                     {event.current_user_status === 'attending' && (
-                      <button
-                        onClick={() => handleJoin('declined')}
-                        disabled={joining}
-                        className="text-sm text-red-600 hover:underline"
-                      >
-                        不参加にする
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleJoin('pending')}
+                          disabled={joining}
+                          className="text-sm text-amber-600 hover:underline"
+                        >
+                          検討中にする
+                        </button>
+                        <button
+                          onClick={() => handleJoin('declined')}
+                          disabled={joining}
+                          className="text-sm text-red-600 hover:underline"
+                        >
+                          不参加にする
+                        </button>
+                      </>
+                    )}
+                    {event.current_user_status === 'pending' && (
+                      <>
+                        <button
+                          onClick={() => handleJoin('attending')}
+                          disabled={joining}
+                          className="text-sm text-green-600 hover:underline"
+                        >
+                          参加にする
+                        </button>
+                        <button
+                          onClick={() => handleJoin('declined')}
+                          disabled={joining}
+                          className="text-sm text-red-600 hover:underline"
+                        >
+                          不参加にする
+                        </button>
+                      </>
                     )}
                     {event.current_user_status === 'declined' && (
-                      <button
-                        onClick={() => handleJoin('attending')}
-                        disabled={joining}
-                        className="text-sm text-green-600 hover:underline"
-                      >
-                        参加にする
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleJoin('attending')}
+                          disabled={joining}
+                          className="text-sm text-green-600 hover:underline"
+                        >
+                          参加にする
+                        </button>
+                        <button
+                          onClick={() => handleJoin('pending')}
+                          disabled={joining}
+                          className="text-sm text-amber-600 hover:underline"
+                        >
+                          検討中にする
+                        </button>
+                      </>
                     )}
                     <button
                       onClick={handleLeave}
@@ -294,6 +330,13 @@ export function EventDetailPage() {
                       className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm"
                     >
                       参加する
+                    </button>
+                    <button
+                      onClick={() => handleJoin('pending')}
+                      disabled={joining}
+                      className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600 text-sm"
+                    >
+                      検討中
                     </button>
                     <button
                       onClick={() => handleJoin('declined')}
@@ -362,6 +405,9 @@ export function EventDetailPage() {
                 <span className="text-green-600 font-medium">
                   参加: {event.participants.filter((p) => p.status === 'attending').length}
                 </span>
+                <span className="text-amber-600 font-medium">
+                  検討中: {event.participants.filter((p) => p.status === 'pending').length}
+                </span>
                 <span className="text-red-600 font-medium">
                   不参加: {event.participants.filter((p) => p.status === 'declined').length}
                 </span>
@@ -384,13 +430,9 @@ export function EventDetailPage() {
                       <span className="font-medium text-sm">{p.user?.name || 'Unknown'}</span>
                     </div>
                     <span
-                      className={`text-xs px-2 py-0.5 rounded shrink-0 ${p.status === 'attending' ? 'bg-green-100 text-green-700' : p.status === 'declined' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}
+                      className={`text-xs px-2 py-0.5 rounded shrink-0 ${p.status === 'attending' ? 'bg-green-100 text-green-700' : p.status === 'pending' ? 'bg-amber-100 text-amber-700' : p.status === 'declined' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}
                     >
-                      {p.status === 'attending'
-                        ? '参加'
-                        : p.status === 'declined'
-                          ? '不参加'
-                          : p.status}
+                      {({ attending: '参加', pending: '検討中', declined: '不参加' } as Record<string, string>)[p.status] || p.status}
                     </span>
                   </div>
                   {p.comment && <p className="text-xs text-gray-400 mt-0.5 ml-11">{p.comment}</p>}

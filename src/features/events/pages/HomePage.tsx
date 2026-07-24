@@ -48,6 +48,8 @@ export function HomePage() {
     switch (s) {
       case 'attending':
         return '参加';
+      case 'pending':
+        return '検討中';
       case 'declined':
         return '不参加';
       default:
@@ -161,9 +163,11 @@ export function HomePage() {
                         className={`text-xs px-2 py-0.5 rounded whitespace-nowrap ${
                           event.current_user_status === 'attending'
                             ? 'bg-green-100 text-green-700'
-                            : event.current_user_status === 'declined'
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-gray-100 text-gray-600'
+                            : event.current_user_status === 'pending'
+                              ? 'bg-amber-100 text-amber-700'
+                              : event.current_user_status === 'declined'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-gray-100 text-gray-600'
                         }`}
                       >
                         {statusLabel(event.current_user_status)}
