@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth, AuthProvider } from '@features/auth/hooks/useAuth';
 import { useAppName } from '@shared/hooks/useAppName';
 import { LoadingSpinner } from '@shared/components/LoadingSpinner';
@@ -76,12 +76,20 @@ function AdminHeader() {
   );
 }
 
+const TABLE_LIST_ROUTES = ['/admin/users', '/admin/events', '/admin/audit-logs'];
+
 function AdminPage({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation();
+  const tableList = TABLE_LIST_ROUTES.includes(pathname);
   return (
     <AdminRoute>
-      <div className="min-h-screen bg-gray-50">
+      <div className="h-dvh flex flex-col bg-gray-50">
         <AdminHeader />
-        <div className="max-w-6xl mx-auto px-4 py-6">
+        <div
+          className={`flex-1 min-h-0 overflow-y-auto max-w-6xl mx-auto w-full px-4 py-6 ${
+            tableList ? 'admin-page-scroll-hidden' : ''
+          }`}
+        >
           <AdminLayout>{children}</AdminLayout>
         </div>
       </div>

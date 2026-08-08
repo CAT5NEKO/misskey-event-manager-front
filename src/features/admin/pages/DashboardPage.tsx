@@ -29,27 +29,27 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         {stats === null ? (
           <>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex items-center justify-center">
+            <div className="bg-white rounded-xl border border-gray-200 p-6 flex items-center justify-center">
               <LoadingSpinner />
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex items-center justify-center">
+            <div className="bg-white rounded-xl border border-gray-200 p-6 flex items-center justify-center">
               <LoadingSpinner />
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 flex items-center justify-center">
+            <div className="bg-white rounded-xl border border-gray-200 p-6 flex items-center justify-center">
               <LoadingSpinner />
             </div>
           </>
         ) : (
           <>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
               <p className="text-sm text-gray-500">ユーザー数</p>
               <p className="text-3xl font-bold">{stats.users}</p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
               <p className="text-sm text-gray-500">イベント数</p>
               <p className="text-3xl font-bold">{stats.events}</p>
             </div>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
               <p className="text-sm text-gray-500">許可インスタンス</p>
               <p className="text-3xl font-bold">{stats.instances}</p>
             </div>

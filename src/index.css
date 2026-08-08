@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@media (min-width: 768px) {
+  .admin-page-scroll-hidden {
+    overflow: hidden !important;
+  }
+}

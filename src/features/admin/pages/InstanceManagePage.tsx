@@ -36,14 +36,14 @@ export function InstanceManagePage() {
       <h1 className="text-2xl font-bold mb-4">インスタンス管理</h1>
       <form
         onSubmit={add}
-        className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6 flex gap-2"
+        className="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex flex-col sm:flex-row gap-2"
       >
         <input
           type="text"
           value={host}
           onChange={(e) => setHost(e.target.value)}
           placeholder="インスタンスホスト名"
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
+          className="flex-1 w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
           required
         />
         <input
@@ -51,26 +51,30 @@ export function InstanceManagePage() {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="説明（任意）"
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
+          className="flex-1 w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
         />
         <button
           type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm"
+          className="bg-blue-600 text-white px-4 py-2.5 rounded-lg border border-blue-600 hover:bg-blue-700 text-sm shrink-0"
         >
           追加
         </button>
       </form>
       {loading ? (
         <LoadingSpinner />
+      ) : instances.length === 0 ? (
+        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-sm text-gray-500">
+          許可インスタンスの登録がありません
+        </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="bg-white rounded-xl border border-gray-200">
           {instances.map((inst) => (
             <div
               key={inst.id}
-              className="flex items-center justify-between p-4 border-b last:border-0"
+              className="flex items-center justify-between gap-3 p-4 border-b last:border-0"
             >
-              <div>
-                <p className="font-medium">
+              <div className="min-w-0">
+                <p className="font-medium break-all">
                   {inst.host}
                   {inst.protected && (
                     <span className="ml-1 text-xs bg-yellow-100 text-yellow-700 px-1 rounded">
@@ -78,9 +82,11 @@ export function InstanceManagePage() {
                     </span>
                   )}
                 </p>
-                {inst.description && <p className="text-xs text-gray-400">{inst.description}</p>}
+                {inst.description && (
+                  <p className="text-xs text-gray-400 break-all">{inst.description}</p>
+                )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 {!inst.protected && (
                   <button
                     onClick={() => del(inst)}

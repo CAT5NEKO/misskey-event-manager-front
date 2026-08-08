@@ -53,14 +53,14 @@ export function AdminSettingsPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">システム設定</h1>
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
+      <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
         <div>
           <label className="block text-sm font-medium mb-1">アプリ名</label>
           <input
             type="text"
             value={String(settings['app.name'] || '')}
             onChange={(e) => sv('app.name', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
           />
         </div>
         <div>
@@ -75,7 +75,7 @@ export function AdminSettingsPage() {
                 : String(settings['notification.default_timing'] || '')
             }
             onChange={(e) => sv('notification.default_timing', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
           />
         </div>
         <div>
@@ -84,7 +84,7 @@ export function AdminSettingsPage() {
             type="number"
             value={Number(settings['events.max_per_user'] || 0)}
             onChange={(e) => sv('events.max_per_user', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -101,7 +101,7 @@ export function AdminSettingsPage() {
         <button
           onClick={save}
           disabled={saving}
-          className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 text-sm"
+          className="bg-blue-600 text-white px-6 py-2.5 rounded-lg border border-blue-600 hover:bg-blue-700 disabled:opacity-50 text-sm"
         >
           {saving ? '保存中...' : '設定を保存'}
         </button>
