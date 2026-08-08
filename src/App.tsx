@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { useAuth, AuthProvider } from '@features/auth/hooks/useAuth';
-import { useEffect, useState } from 'react';
-import { api } from '@shared/api/client';
+import { useAppName } from '@shared/hooks/useAppName';
 import { LoadingSpinner } from '@shared/components/LoadingSpinner';
 import { ErrorBoundary } from '@shared/components/ErrorBoundary';
 import { AccountSwitcher } from '@features/auth/components/AccountSwitcher';
@@ -36,12 +35,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
 function AdminHeader() {
   const { logout } = useAuth();
-  const [appName, setAppName] = useState('miSchedule');
-  useEffect(() => {
-    api<{ name: string }>('/app/name')
-      .then((res) => setAppName(res.name))
-      .catch(() => {});
-  }, []);
+  const appName = useAppName();
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">

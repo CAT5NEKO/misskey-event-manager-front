@@ -1,19 +1,12 @@
-import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@features/auth/hooks/useAuth';
-import { api } from '@shared/api/client';
 import { AccountSwitcher } from '@features/auth/components/AccountSwitcher';
+import { useAppName } from '@shared/hooks/useAppName';
 
 export function Header() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [appName, setAppName] = useState('miSchedule');
-
-  useEffect(() => {
-    api<{ name: string }>('/app/name')
-      .then((res) => setAppName(res.name))
-      .catch(() => {});
-  }, []);
+  const appName = useAppName();
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
