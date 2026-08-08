@@ -37,7 +37,7 @@ function AdminHeader() {
   const { logout } = useAuth();
   const appName = useAppName();
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
+    <header className="bg-white border-b border-gray-200">
       <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
         <div className="flex items-center gap-2 sm:gap-6">
           <Link to="/" className="text-lg sm:text-xl font-bold text-blue-600 shrink-0">

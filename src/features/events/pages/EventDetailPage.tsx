@@ -165,7 +165,7 @@ export function EventDetailPage() {
         >
           &larr; 予定一覧に戻る
         </Link>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
           <div className="flex items-start justify-between mb-4">
             <h1 className="text-xl sm:text-2xl font-bold">{event.title}</h1>
             <div className="flex gap-2 items-center">
@@ -257,100 +257,47 @@ export function EventDetailPage() {
 
           {event.status === 'active' && !isExpired && (
             <div className="mt-6 pt-4 border-t">
-              <div className="flex flex-wrap gap-2">
-                {event.current_user_status ? (
-                  <>
-                    {event.current_user_status === 'attending' && (
-                      <>
+              {!isCreator && (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div className="w-full grid grid-cols-3 rounded-lg border border-gray-200 bg-gray-100 p-0.5 sm:p-1">
+                    {([
+                      { value: 'attending', label: '参加', activeCls: 'bg-white text-green-700' },
+                      { value: 'pending', label: '検討中', activeCls: 'bg-white text-amber-700' },
+                      { value: 'declined', label: '不参加', activeCls: 'bg-white text-red-700' },
+                    ] as const).map((opt) => {
+                      const active = event.current_user_status === opt.value;
+                      return (
                         <button
-                          onClick={() => handleJoin('pending')}
+                          key={opt.value}
+                          type="button"
+                          onClick={() => handleJoin(opt.value)}
                           disabled={joining}
-                          className="text-sm text-amber-600 hover:underline"
+                          className={`px-3 py-1.5 sm:py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            active
+                              ? `${opt.activeCls} border border-gray-200`
+                              : 'text-gray-500 hover:text-gray-800'
+                          } disabled:opacity-60`}
                         >
-                          検討中にする
+                          {opt.label}
                         </button>
-                        <button
-                          onClick={() => handleJoin('declined')}
-                          disabled={joining}
-                          className="text-sm text-red-600 hover:underline"
-                        >
-                          不参加にする
-                        </button>
-                      </>
-                    )}
-                    {event.current_user_status === 'pending' && (
-                      <>
-                        <button
-                          onClick={() => handleJoin('attending')}
-                          disabled={joining}
-                          className="text-sm text-green-600 hover:underline"
-                        >
-                          参加にする
-                        </button>
-                        <button
-                          onClick={() => handleJoin('declined')}
-                          disabled={joining}
-                          className="text-sm text-red-600 hover:underline"
-                        >
-                          不参加にする
-                        </button>
-                      </>
-                    )}
-                    {event.current_user_status === 'declined' && (
-                      <>
-                        <button
-                          onClick={() => handleJoin('attending')}
-                          disabled={joining}
-                          className="text-sm text-green-600 hover:underline"
-                        >
-                          参加にする
-                        </button>
-                        <button
-                          onClick={() => handleJoin('pending')}
-                          disabled={joining}
-                          className="text-sm text-amber-600 hover:underline"
-                        >
-                          検討中にする
-                        </button>
-                      </>
-                    )}
+                      );
+                    })}
+                  </div>
+                  {event.current_user_status && (
                     <button
+                      type="button"
                       onClick={handleLeave}
                       disabled={joining}
-                      className="text-sm text-gray-500 hover:underline"
+                      className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-60"
                     >
                       回答を取り消す
                     </button>
-                  </>
-                ) : !isCreator ? (
-                  <>
-                    <button
-                      onClick={() => handleJoin('attending')}
-                      disabled={joining}
-                      className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm"
-                    >
-                      参加する
-                    </button>
-                    <button
-                      onClick={() => handleJoin('pending')}
-                      disabled={joining}
-                      className="bg-amber-500 text-white px-4 py-2 rounded-md hover:bg-amber-600 text-sm"
-                    >
-                      検討中
-                    </button>
-                    <button
-                      onClick={() => handleJoin('declined')}
-                      disabled={joining}
-                      className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 text-sm"
-                    >
-                      不参加
-                    </button>
-                  </>
-                ) : null}
-              </div>
+                  )}
+                </div>
+              )}
 
               {!isCreator && event.current_user_status && (
-                <div className="mt-2">
+                <div className="mt-3">
                   {showComment ? (
                     <div className="flex flex-col sm:flex-row gap-2">
                       <div className="flex-1">
@@ -360,7 +307,7 @@ export function EventDetailPage() {
                           onChange={(e) => setComment(e.target.value)}
                           placeholder="一言コメント"
                           maxLength={50}
-                          className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                         />
                         <div className="text-xs text-gray-400 text-right mt-0.5">
                           {comment.length}/50
@@ -370,17 +317,19 @@ export function EventDetailPage() {
                         <button
                           onClick={handleSaveComment}
                           disabled={savingComment}
-                          className="bg-blue-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-700 disabled:opacity-50"
+                          className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
                         >
                           {savingComment ? '保存中' : '保存'}
                         </button>
-                        <button
-                          onClick={handleDeleteComment}
-                          disabled={savingComment}
-                          className="text-sm text-red-500 hover:text-red-700 py-1.5"
-                        >
-                          削除
-                        </button>
+                        {comment && (
+                          <button
+                            onClick={handleDeleteComment}
+                            disabled={savingComment}
+                            className="text-sm text-red-500 hover:text-red-700 py-2"
+                          >
+                            削除
+                          </button>
+                        )}
                       </div>
                     </div>
                   ) : (
@@ -397,7 +346,7 @@ export function EventDetailPage() {
           )}
         </div>
 
-        <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="mt-6 bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-lg font-semibold mb-3">参加者</h2>
           {event.participants && event.participants.length > 0 ? (
             <div className="space-y-2">

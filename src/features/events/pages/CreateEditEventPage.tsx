@@ -146,7 +146,7 @@ export function CreateEditEventPage() {
         ) : (
           <form
             onSubmit={handleSubmit}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4"
+            className="bg-white rounded-xl border border-gray-200 p-6 space-y-4"
             onChange={() => setTouched(true)}
           >
             {limitReached && (
@@ -161,7 +161,7 @@ export function CreateEditEventPage() {
                   setTitle(e.target.value);
                   setTouched(true);
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 maxLength={200}
               />
               {fieldError('タイトル')}
@@ -171,7 +171,7 @@ export function CreateEditEventPage() {
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 rows={3}
                 maxLength={5000}
               />
@@ -183,7 +183,7 @@ export function CreateEditEventPage() {
                   type="text"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   maxLength={255}
                 />
               </div>
@@ -193,7 +193,7 @@ export function CreateEditEventPage() {
                   type="text"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   maxLength={255}
                 />
               </div>
@@ -208,7 +208,7 @@ export function CreateEditEventPage() {
                     setEventDate(e.target.value);
                     setTouched(true);
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 />
                 {fieldError('予定日')}
               </div>
@@ -221,7 +221,7 @@ export function CreateEditEventPage() {
                     setDeadline(e.target.value);
                     setTouched(true);
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 />
                 {fieldError('回答期限')}
               </div>
@@ -243,7 +243,11 @@ export function CreateEditEventPage() {
                         if (active) setNotifTiming(notifTiming.filter((v) => v !== preset.value));
                         else setNotifTiming([...notifTiming, preset.value]);
                       }}
-                      className={`px-3 py-1.5 rounded text-sm border ${active ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                      className={`px-3 py-1.5 rounded-md text-sm border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                        active
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      }`}
                     >
                       {preset.label}
                     </button>
@@ -255,36 +259,35 @@ export function CreateEditEventPage() {
                   type="number"
                   value={customTiming}
                   onChange={(e) => setCustomTiming(e.target.value)}
-                  className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const num = parseInt(customTiming, 10);
+                      const unit = parseInt(timingUnit, 10);
+                      if (!isNaN(num) && num > 0) {
+                        const v = num * unit;
+                        if (!notifTiming.includes(v)) {
+                          setNotifTiming([...notifTiming, v]);
+                          setCustomTiming('');
+                        }
+                      }
+                    }
+                  }}
+                  className="w-24 px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                   min="1"
+                  placeholder="カスタム"
                 />
                 <select
                   value={timingUnit}
                   onChange={(e) => setTimingUnit(e.target.value)}
-                  className="px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="px-2 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
                 >
                   <option value="1">分</option>
                   <option value="60">時間</option>
                   <option value="1440">日</option>
                   <option value="10080">週間</option>
                 </select>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const num = parseInt(customTiming, 10);
-                    const unit = parseInt(timingUnit, 10);
-                    if (!isNaN(num) && num > 0) {
-                      const v = num * unit;
-                      if (!notifTiming.includes(v)) {
-                        setNotifTiming([...notifTiming, v]);
-                        setCustomTiming('');
-                      }
-                    }
-                  }}
-                  className="bg-gray-200 text-gray-700 px-3 py-2 rounded-md hover:bg-gray-300 text-sm shrink-0"
-                >
-                  追加
-                </button>
+                <span className="text-xs text-gray-400">数値を入力して Enter</span>
               </div>
               {notifTiming.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-2">
@@ -335,16 +338,30 @@ export function CreateEditEventPage() {
             </p>
             {isEdit && (
               <div>
-                <label className="block text-sm font-medium mb-1">ステータス</label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="active">募集中</option>
-                  <option value="cancelled">中止</option>
-                  <option value="completed">終了</option>
-                </select>
+                <label className="block text-sm font-medium mb-1.5">ステータス</label>
+                <div className="inline-flex flex-wrap rounded-lg border border-gray-200 bg-gray-100 p-1">
+                  {[
+                    { value: 'active', label: '募集中', activeCls: 'bg-white text-blue-700' },
+                    { value: 'cancelled', label: '中止', activeCls: 'bg-white text-red-700' },
+                    { value: 'completed', label: '終了', activeCls: 'bg-white text-gray-700' },
+                  ].map((opt) => {
+                    const active = status === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setStatus(opt.value)}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          active
+                            ? `${opt.activeCls} border border-gray-200`
+                            : 'text-gray-500 hover:text-gray-800'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
             {error && <p className="text-sm text-red-600 bg-red-50 rounded p-2">{error}</p>}
@@ -354,7 +371,7 @@ export function CreateEditEventPage() {
                   <button
                     type="submit"
                     disabled
-                    className="bg-blue-600 text-white px-6 py-2 rounded-md opacity-50 cursor-not-allowed"
+                    className="bg-blue-600 text-white px-6 py-2.5 rounded-lg border border-blue-600 opacity-50 cursor-not-allowed"
                   >
                     {loading ? '保存中...' : '保存'}
                   </button>
@@ -366,7 +383,7 @@ export function CreateEditEventPage() {
                 <button
                   type="submit"
                   disabled={loading || (touched && !validation.valid)}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-blue-600 text-white px-6 py-2.5 rounded-lg border border-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? '保存中...' : '保存'}
                 </button>
@@ -374,7 +391,7 @@ export function CreateEditEventPage() {
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="bg-gray-200 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-300"
+                className="bg-white text-gray-700 border border-gray-300 px-6 py-2.5 rounded-lg hover:bg-gray-50"
               >
                 キャンセル
               </button>

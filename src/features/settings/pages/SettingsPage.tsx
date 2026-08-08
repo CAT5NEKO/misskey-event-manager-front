@@ -42,7 +42,7 @@ export function SettingsPage() {
       <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <h1 className="text-2xl font-bold mb-6">アカウント設定</h1>
         {sessions.length > 1 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
             <h2 className="text-sm font-medium mb-3">アカウント一覧</h2>
             <div className="space-y-1">
               {sessions.map((s, i) => (
@@ -66,7 +66,7 @@ export function SettingsPage() {
             </div>
           </div>
         )}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
           <div>
             <h2 className="text-sm text-gray-500">ユーザー名</h2>
             <p className="font-medium">{user.name}</p>
@@ -90,25 +90,25 @@ export function SettingsPage() {
         <div className="mt-4 space-y-3">
           <Link
             to="/login?add=1"
-            className="block w-full text-center bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 text-sm"
+            className="block w-full text-center bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 text-sm"
           >
             アカウントを追加
           </Link>
           <button
             onClick={handleLogout}
-            className="w-full bg-gray-200 text-gray-700 py-2 rounded-md hover:bg-gray-300"
+            className="w-full bg-white text-gray-700 border border-gray-300 py-2.5 rounded-lg hover:bg-gray-50"
           >
             ログアウト
           </button>
           {canDelete && (
             <>
-              <div className="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-700">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
                 この操作を行うと、あなたの作成した予定・参加情報を含むすべてのデータが完全に削除され、復元できません。
               </div>
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="w-full bg-red-600 text-white py-2 rounded-md hover:bg-red-700 disabled:opacity-50"
+                className="w-full bg-red-600 text-white py-2.5 rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
                 {deleting ? '削除中...' : 'アカウントを削除'}
               </button>

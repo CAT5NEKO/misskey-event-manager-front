@@ -24,9 +24,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <Link
               key={link.to}
               to={link.to}
-              className={`block px-3 py-2 rounded text-xs sm:text-sm whitespace-nowrap ${
+              className={`block px-3 py-2 rounded-md text-xs sm:text-sm whitespace-nowrap ${
                 location.pathname === link.to
-                  ? 'bg-orange-100 text-orange-800 font-medium'
+                  ? 'bg-blue-100 text-blue-800 font-medium'
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
