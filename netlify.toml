@@ -2,6 +2,9 @@
   command = "npm run build"
   publish = "dist"
 
+# /events/{id} のOGP は netlify/edge-functions/ogp.ts がバックエンドへプロキシして返します。
+# Netlify サイト側に環境変数 `BACKEND_PUBLIC_URL` (e.g. https://api.example.com) を設定してください。
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
