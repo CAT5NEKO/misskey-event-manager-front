@@ -2,19 +2,18 @@ import type { Context } from "@netlify/edge-functions";
 
 export const config = { path: "/events/*" };
 
-const UUID = /^\/events\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/;
+const UUID = /^\/events\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})\/?$/;
 
 const BOT_UA =
-  /twitterbot|facebookexternalhit|mastodon|misskey|mstdn|line|slackbot|discordbot|telegrambot|whatsapp|skypeuripreview|pinterest|linkedinbot|googlebot|bingbot|duckduckbot|applebot|yandex|baiduspider|preview|bot|crawler|spider|checker/i;
+  /twitterbot|facebookexternalhit|mastodon|misskey|mstdn|summaly|line|slackbot|discordbot|telegrambot|whatsapp|skypeuripreview|pinterest|linkedinbot|googlebot|bingbot|duckduckbot|applebot|yandex|baiduspider|preview|bot|crawler|spider|checker|curl|wget|node|python/i;
 
 const BROWSER_UA = /mozilla|chrome|safari|firefox|edge|opera|mobile|iphone|android/i;
 
 function isOgpCrawler(req: Request): boolean {
-  const ua = req.headers.get("user-agent") ?? "";
+  const ua = (req.headers.get("user-agent") ?? "").toLowerCase();
   if (BOT_UA.test(ua)) return true;
-  if (req.headers.has("sec-ch-ua") || req.headers.has("sec-fetch-dest")) return false;
-  if (BROWSER_UA.test(ua)) return false;
-  return true;
+  const browserNav = req.headers.get("sec-fetch-dest") === "document" && BROWSER_UA.test(ua);
+  return !browserNav;
 }
 
 export default async (req: Request, ctx: Context) => {
