@@ -1,6 +1,51 @@
+@import './design-system/tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+html {
+  font-family: var(--ds-font-family);
+  font-size: var(--ds-font-size-base);
+  line-height: var(--ds-line-height);
+  background: var(--ds-color-bg);
+  color: var(--ds-color-text);
+}
+
+body {
+  min-height: 100dvh;
+  margin: 0;
+  background: var(--ds-color-bg);
+  color: var(--ds-color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+::selection {
+  background: var(--ds-color-accent-subtle);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ds-color-focus);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: var(--ds-radius-full);
+  background: var(--ds-color-scrollbar);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ds-color-scrollbar-hover);
+}
 
 @media (min-width: 768px) {
   .admin-page-scroll-hidden {

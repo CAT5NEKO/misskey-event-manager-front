@@ -9,6 +9,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       '@shared': path.resolve(__dirname, './src/shared'),
       '@features': path.resolve(__dirname, './src/features'),
+      '@design-system': path.resolve(__dirname, './src/design-system'),
     },
   },
   server: {
