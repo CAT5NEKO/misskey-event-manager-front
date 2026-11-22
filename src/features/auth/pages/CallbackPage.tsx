@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@features/auth/hooks/useAuth';
+import { Button, Spinner } from '@design-system/index';
 
 export function CallbackPage() {
   const [searchParams] = useSearchParams();
@@ -41,10 +42,10 @@ export function CallbackPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-dvh flex items-center justify-center bg-ds-bg">
         <div className="text-center">
-          <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-gray-600">認証中...</p>
+          <Spinner size="lg" className="mx-auto mb-4" />
+          <p className="text-ds-text-muted text-sm">認証中...</p>
         </div>
       </div>
     );
@@ -52,12 +53,12 @@ export function CallbackPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-dvh flex items-center justify-center bg-ds-bg p-4">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <button onClick={() => navigate('/login')} className="text-blue-600 hover:underline">
+          <p className="text-ds-danger-text mb-4 text-sm">{error}</p>
+          <Button variant="secondary" size="sm" onClick={() => navigate('/login')}>
             ログインに戻る
-          </button>
+          </Button>
         </div>
       </div>
     );

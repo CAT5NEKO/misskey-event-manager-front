@@ -1,87 +1,184 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { IconCheck, IconChevronDown, IconPlus, IconUser, IconX } from '@tabler/icons-react';
 import { useAuth } from '@features/auth/hooks/useAuth';
+import { Avatar, Button, useConfirm } from '@design-system/index';
+import { cn } from '@design-system/lib/cn';
 
-export function AccountSwitcher() {
+interface AccountSwitcherProps {
+  variant?: 'sidebar' | 'mobile';
+}
+
+export function AccountSwitcher({ variant = 'sidebar' }: AccountSwitcherProps) {
   const { sessions, activeIndex, switchAccount, removeAccount } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const activeSession = sessions[activeIndex];
+
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+    };
+  }, [open]);
 
   const handleSwitch = async (index: number) => {
     if (index === activeIndex) {
       setOpen(false);
       return;
     }
+
     await switchAccount(index);
     setOpen(false);
     navigate('/');
   };
 
+  const handleRemove = async (index: number) => {
+    const session = sessions[index];
+
+    if (!session) return;
+
+    const confirmed = await confirm({
+      title: 'アカウントをログアウト',
+      message: `${session.name} をログアウトしますか？`,
+      confirmLabel: 'ログアウト',
+      danger: true,
+    });
+
+    if (!confirmed) return;
+
+    removeAccount(index);
+  };
+
+  const handleAddAccount = () => {
+    setOpen(false);
+    navigate('/login?add=1');
+  };
+
   return (
-    <div className="relative">
+    <div
+      ref={rootRef}
+      className={cn('relative', variant === 'mobile' ? 'flex flex-col items-center' : 'w-full')}
+    >
       <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800"
+        type="button"
+        aria-label={variant === 'mobile' ? 'アカウント' : undefined}
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className={cn(
+          'flex items-center transition-colors',
+          variant === 'mobile'
+            ? 'flex-col py-3'
+            : 'w-full gap-2 rounded-ds-lg p-2 text-left hover:bg-ds-surface-hover max-[1279px]:justify-center max-[1279px]:p-0',
+        )}
       >
-        <span className="w-2 h-2 rounded-full bg-green-500" />
-        {sessions[activeIndex]?.name}
-        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        {variant === 'mobile' ? (
+          <span className="flex h-[42px] w-full max-w-[42px] items-center justify-center rounded-ds-full text-ds-text-muted transition-colors hover:bg-ds-surface-hover">
+            {activeSession?.avatarUrl ? (
+              <Avatar src={activeSession.avatarUrl} name={activeSession.name} size="sm" />
+            ) : (
+              <IconUser size={20} aria-hidden="true" />
+            )}
+          </span>
+        ) : (
+          <>
+            <Avatar
+              src={activeSession?.avatarUrl}
+              name={activeSession?.name}
+              size="md"
+              className="shrink-0"
+            />
+            <span className="min-w-0 flex-1 max-[1279px]:hidden">
+              <span className="block truncate text-sm font-medium text-ds-text">
+                {activeSession?.name ?? 'アカウント'}
+              </span>
+              {activeSession && (
+                <span className="block truncate text-xs text-ds-text-muted">
+                  @{activeSession.username}@{activeSession.host}
+                </span>
+              )}
+            </span>
+            <IconChevronDown
+              size={14}
+              className="shrink-0 text-ds-text-muted max-[1279px]:hidden"
+              aria-hidden="true"
+            />
+          </>
+        )}
       </button>
+
       {open && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-20 py-1">
-            {sessions.map((s, i) => (
-              <div
-                key={s.userId}
-                className={`flex items-center justify-between px-3 py-2 ${
-                  sessions.length > 1 ? 'cursor-pointer hover:bg-gray-50' : 'cursor-default'
-                } ${i === activeIndex ? 'bg-blue-50' : ''}`}
-                onClick={() => sessions.length > 1 && handleSwitch(i)}
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  {s.avatarUrl ? (
-                    <img src={s.avatarUrl} className="w-6 h-6 rounded-full shrink-0" alt="" />
-                  ) : (
-                    <div className="w-6 h-6 rounded-full bg-gray-300 shrink-0 flex items-center justify-center text-xs font-bold text-gray-500">
-                      {s.name[0]}
-                    </div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{s.name}</p>
-                    <p className="text-xs text-gray-400 truncate">
-                      @{s.username}@{s.host}
-                    </p>
-                  </div>
-                </div>
-                {sessions.length > 1 && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (confirm(`${s.name} をログアウトしますか？`)) removeAccount(i);
-                    }}
-                    className="text-xs text-red-400 hover:text-red-600 shrink-0 ml-2"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            ))}
-            <div className="border-t mt-1 pt-1">
+        <div
+          className={cn(
+            'absolute bottom-full z-50 mb-2 max-h-80 w-64 overflow-y-auto rounded-ds-lg border-[0.5px] border-ds-border bg-ds-surface p-1 shadow-ds',
+            variant === 'mobile' ? 'right-0' : 'left-0',
+          )}
+        >
+          {sessions.map((session, index) => (
+            <div
+              key={session.userId}
+              className={cn(
+                'flex items-center gap-1 rounded-ds-md',
+                index === activeIndex && 'bg-ds-accent-subtle',
+              )}
+            >
               <button
-                onClick={() => {
-                  setOpen(false);
-                  navigate('/login?add=1');
-                }}
-                className="w-full text-left px-3 py-2 text-sm text-blue-600 hover:bg-gray-50"
+                type="button"
+                onClick={() => handleSwitch(index)}
+                className="flex min-w-0 flex-1 items-center gap-2 px-2 py-2 text-left"
               >
-                + アカウントを追加
+                <Avatar src={session.avatarUrl} name={session.name} size="sm" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm text-ds-text">{session.name}</span>
+                  <span className="block truncate text-xs text-ds-text-muted">
+                    @{session.username}@{session.host}
+                  </span>
+                </span>
+                {index === activeIndex && (
+                  <IconCheck size={16} className="shrink-0 text-ds-accent" aria-hidden="true" />
+                )}
               </button>
+              {sessions.length > 1 && (
+                <Button
+                  variant="danger-ghost"
+                  size="sm"
+                  aria-label={`${session.name} をログアウト`}
+                  onClick={() => handleRemove(index)}
+                  className="mr-1 h-7 w-7 min-w-0 shrink-0 px-0"
+                >
+                  <IconX size={14} aria-hidden="true" />
+                </Button>
+              )}
             </div>
-          </div>
-        </>
+          ))}
+          <div className="my-1 border-t-[0.5px] border-ds-border" />
+          <Button
+            variant="ghost"
+            size="sm"
+            fullWidth
+            className="justify-start"
+            onClick={handleAddAccount}
+            leftIcon={<IconPlus size={16} aria-hidden="true" />}
+          >
+            アカウントを追加
+          </Button>
+        </div>
       )}
     </div>
   );
