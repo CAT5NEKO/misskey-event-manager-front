@@ -49,7 +49,8 @@ export function CreateEditEventPage() {
   const [loading, setLoading] = useState(false);
   const [fetchingEvent, setFetchingEvent] = useState(isEdit);
   const [error, setError] = useState('');
-  const [touched, setTouched] = useState(false);
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
+  const [submitted, setSubmitted] = useState(false);
   const [limitInfo, setLimitInfo] = useState<EventLimitInfo | null>(null);
   const mountedRef = useRef(true);
 
@@ -103,18 +104,43 @@ export function CreateEditEventPage() {
     return { errors, valid: errors.length === 0 };
   }, [title, eventDate, deadline]);
 
+  const markTouched = (field: string) => {
+    setTouchedFields((prev) => ({ ...prev, [field]: true }));
+  };
+
+  const fieldError = (field: string) => {
+    if (!submitted && !touchedFields[field]) return undefined;
+    return validation.errors.find((e) => e.includes(field));
+  };
+
+  const handleAddCustomTiming = () => {
+    if (!customTiming.trim()) return;
+    const num = parseInt(customTiming.trim(), 10);
+    const unit = parseInt(timingUnit, 10);
+    if (isNaN(num) || num <= 0) return;
+    const value = num * unit;
+    if (!notifTiming.includes(value)) {
+      setNotifTiming([...notifTiming, value]);
+      setCustomTiming('');
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setTouched(true);
+    setSubmitted(true);
     setError('');
     if (!validation.valid) return;
 
     setLoading(true);
     const timing = [...notifTiming];
-    if (customTiming) {
-      const parsed = parseInt(customTiming, 10);
-      if (!isNaN(parsed) && parsed > 0 && !timing.includes(parsed)) {
-        timing.push(parsed);
+    if (customTiming.trim()) {
+      const parsed = parseInt(customTiming.trim(), 10);
+      const unit = parseInt(timingUnit, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        const value = parsed * unit;
+        if (!timing.includes(value)) {
+          timing.push(value);
+        }
       }
     }
 
@@ -153,24 +179,8 @@ export function CreateEditEventPage() {
     }
   };
 
-  const fieldError = (field: string) => {
-    if (!touched) return undefined;
-    return validation.errors.find((e) => e.includes(field));
-  };
-
   const limitReached =
     !isEdit && Boolean(limitInfo && limitInfo.max > 0 && limitInfo.current >= limitInfo.max);
-
-  const handleAddCustomTiming = () => {
-    const num = parseInt(customTiming, 10);
-    const unit = parseInt(timingUnit, 10);
-    if (isNaN(num) || num <= 0) return;
-    const value = num * unit;
-    if (!notifTiming.includes(value)) {
-      setNotifTiming([...notifTiming, value]);
-      setCustomTiming('');
-    }
-  };
 
   if (fetchingEvent) {
     return (
@@ -187,7 +197,7 @@ export function CreateEditEventPage() {
       <PageHeader title={isEdit ? 'イベント編集' : '新規イベント'} />
 
       <Panel className="p-5 sm:p-6">
-        <form onSubmit={handleSubmit} className="space-y-4" onChange={() => setTouched(true)}>
+        <form onSubmit={handleSubmit} className="space-y-4">
           {limitReached && (
             <Info tone="danger">
               イベント数の上限（{limitInfo?.max}
@@ -199,10 +209,8 @@ export function CreateEditEventPage() {
             <Input
               type="text"
               value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                setTouched(true);
-              }}
+              onChange={(e) => setTitle(e.target.value)}
+              onBlur={() => markTouched('タイトル')}
               maxLength={200}
             />
           </Field>
@@ -240,26 +248,22 @@ export function CreateEditEventPage() {
               <Input
                 type="datetime-local"
                 value={eventDate}
-                onChange={(e) => {
-                  setEventDate(e.target.value);
-                  setTouched(true);
-                }}
+                onChange={(e) => setEventDate(e.target.value)}
+                onBlur={() => markTouched('予定日')}
               />
             </Field>
             <Field label="回答期限" error={fieldError('回答期限')}>
               <Input
                 type="datetime-local"
                 value={deadline}
-                onChange={(e) => {
-                  setDeadline(e.target.value);
-                  setTouched(true);
-                }}
+                onChange={(e) => setDeadline(e.target.value)}
+                onBlur={() => markTouched('回答期限')}
               />
             </Field>
           </div>
 
           <Field label="通知タイミング（期限前）">
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="flex flex-wrap gap-2">
                 {timingPresets.map((preset) => {
                   const active = notifTiming.includes(preset.value);
@@ -284,30 +288,42 @@ export function CreateEditEventPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <div className="w-24">
+                <div className="w-28 sm:w-32">
                   <Input
                     type="number"
+                    min="1"
                     value={customTiming}
                     onChange={(e) => setCustomTiming(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
+                        if (e.nativeEvent.isComposing) return;
                         e.preventDefault();
                         handleAddCustomTiming();
                       }
                     }}
-                    min="1"
-                    placeholder="カスタム"
+                    placeholder="数値"
+                    className="h-9"
                   />
                 </div>
                 <div className="w-24">
-                  <Select value={timingUnit} onChange={(e) => setTimingUnit(e.target.value)}>
-                    <option value="1">分</option>
-                    <option value="60">時間</option>
-                    <option value="1440">日</option>
-                    <option value="10080">週間</option>
+                  <Select
+                    value={timingUnit}
+                    onChange={(e) => setTimingUnit(e.target.value)}
+                    className="h-9"
+                  >
+                    <option value="1">分前</option>
+                    <option value="60">時間前</option>
+                    <option value="1440">日前</option>
+                    <option value="10080">週間前</option>
                   </Select>
                 </div>
-                <Button type="button" variant="secondary" size="sm" onClick={handleAddCustomTiming}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="md"
+                  className="h-9"
+                  onClick={handleAddCustomTiming}
+                >
                   追加
                 </Button>
               </div>
@@ -359,7 +375,7 @@ export function CreateEditEventPage() {
             <Button
               type="submit"
               variant="primary"
-              disabled={loading || limitReached || (touched && !validation.valid)}
+              disabled={loading || limitReached || (submitted && !validation.valid)}
             >
               {loading ? '保存中...' : '保存'}
             </Button>
