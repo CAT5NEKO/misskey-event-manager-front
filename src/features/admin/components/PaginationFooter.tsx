@@ -1,40 +1,11 @@
-interface PaginationProps {
-  total: number;
-  page: number;
-  pageSize: number;
-  onPageChange: (page: number) => void;
-  className?: string;
-}
+import { Pagination, type PaginationProps } from '@design-system/primitives/Pagination';
 
-export function Pagination({ total, page, pageSize, onPageChange, className }: PaginationProps) {
-  const totalPages = Math.ceil(total / pageSize);
-  return (
-    <div className={`flex flex-wrap items-center justify-center gap-2 ${className || ''}`}>
-      <button
-        onClick={() => onPageChange(Math.max(1, page - 1))}
-        disabled={page <= 1}
-        className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm disabled:opacity-50"
-      >
-        前へ
-      </button>
-      <span className="px-3 py-1.5 text-sm text-gray-600">
-        {page} / {totalPages}
-      </span>
-      <button
-        onClick={() => onPageChange(page + 1)}
-        disabled={page * pageSize >= total}
-        className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm disabled:opacity-50"
-      >
-        次へ
-      </button>
-    </div>
-  );
-}
+export { Pagination, type PaginationProps };
 
 export function PaginationFooter(props: Omit<PaginationProps, 'className'>) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-gray-200 bg-white shadow-[0_-4px_8px_-6px_rgba(0,0,0,0.4)]">
-      <div className="max-w-6xl mx-auto px-4 py-3">
+    <div className="fixed bottom-[var(--ds-min-bottom-spacing-mobile)] left-0 right-0 z-20 border-t-[0.5px] border-ds-border bg-ds-surface shadow-ds-top min-[501px]:bottom-0 min-[501px]:left-[var(--ds-sidebar-icon-width)] min-[1280px]:left-[var(--ds-sidebar-width)]">
+      <div className="mx-auto max-w-ds-wide px-4 py-3">
         <Pagination {...props} />
       </div>
     </div>

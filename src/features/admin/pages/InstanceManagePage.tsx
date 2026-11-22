@@ -1,104 +1,121 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { api } from '@shared/api/client';
-import { LoadingSpinner } from '@shared/components/LoadingSpinner';
 import type { InstanceAllow } from '@shared/types';
+import { Badge, Button, Input, PageHeader, Panel, Spinner, useConfirm } from '@design-system/index';
+
 export function InstanceManagePage() {
   const [instances, setInstances] = useState<InstanceAllow[]>([]);
   const [loading, setLoading] = useState(true);
   const [host, setHost] = useState('');
   const [description, setDescription] = useState('');
-  const fetch = async () => {
+  const confirm = useConfirm();
+
+  const fetchInstances = async () => {
     try {
-      const d = await api<InstanceAllow[]>('/admin/instances');
-      setInstances(d);
+      const data = await api<InstanceAllow[]>('/admin/instances');
+      setInstances(data);
     } catch {
+      setInstances([]);
     } finally {
       setLoading(false);
     }
   };
+
   useEffect(() => {
-    fetch();
+    fetchInstances();
   }, []);
-  const add = async (e: React.FormEvent) => {
+
+  const handleAdd = async (e: FormEvent) => {
     e.preventDefault();
-    await api('/admin/instances', { method: 'POST', body: JSON.stringify({ host, description }) });
+    if (!host.trim()) return;
+
+    await api('/admin/instances', {
+      method: 'POST',
+      body: JSON.stringify({ host: host.trim(), description: description.trim() || undefined }),
+    });
     setHost('');
     setDescription('');
-    fetch();
+    fetchInstances();
   };
-  const del = async (inst: InstanceAllow) => {
-    if (!confirm(inst.host + ' を削除しますか？')) return;
-    await api('/admin/instances/' + inst.id, { method: 'DELETE' });
-    fetch();
+
+  const handleDelete = async (inst: InstanceAllow) => {
+    const ok = await confirm({
+      title: 'インスタンス削除',
+      message: `${inst.host} を削除しますか？`,
+      danger: true,
+      confirmLabel: '削除',
+    });
+    if (!ok) return;
+
+    await api(`/admin/instances/${inst.id}`, { method: 'DELETE' });
+    fetchInstances();
   };
+
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">インスタンス管理</h1>
-      <form
-        onSubmit={add}
-        className="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex flex-col sm:flex-row gap-2"
-      >
-        <input
-          type="text"
-          value={host}
-          onChange={(e) => setHost(e.target.value)}
-          placeholder="インスタンスホスト名"
-          className="flex-1 w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-          required
-        />
-        <input
-          type="text"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="説明（任意）"
-          className="flex-1 w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-        />
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2.5 rounded-lg border border-blue-600 hover:bg-blue-700 text-sm shrink-0"
-        >
-          追加
-        </button>
-      </form>
+      <PageHeader title="インスタンス管理" />
+
+      <Panel className="mb-6 p-4">
+        <form onSubmit={handleAdd} className="flex flex-col gap-2 sm:flex-row">
+          <Input
+            type="text"
+            value={host}
+            onChange={(e) => setHost(e.target.value)}
+            placeholder="インスタンスホスト名 (例: misskey.io)"
+            required
+            className="flex-1"
+          />
+          <Input
+            type="text"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="説明（任意）"
+            className="flex-1"
+          />
+          <Button type="submit" variant="primary" className="shrink-0">
+            追加
+          </Button>
+        </form>
+      </Panel>
+
       {loading ? (
-        <LoadingSpinner />
+        <div className="flex justify-center py-12">
+          <Spinner size="lg" />
+        </div>
       ) : instances.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-sm text-gray-500">
+        <Panel className="p-8 text-center text-sm text-ds-text-muted">
           許可インスタンスの登録がありません
-        </div>
+        </Panel>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200">
-          {instances.map((inst) => (
-            <div
-              key={inst.id}
-              className="flex items-center justify-between gap-3 p-4 border-b last:border-0"
-            >
-              <div className="min-w-0">
-                <p className="font-medium break-all">
-                  {inst.host}
-                  {inst.protected && (
-                    <span className="ml-1 text-xs bg-yellow-100 text-yellow-700 px-1 rounded">
-                      保護
-                    </span>
+        <Panel className="overflow-hidden">
+          <div className="divide-y-[0.5px] divide-ds-border">
+            {instances.map((inst) => (
+              <div
+                key={inst.id}
+                className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-ds-surface-hover"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-ds-text break-all">{inst.host}</p>
+                    {inst.protected && <Badge tone="warning">保護</Badge>}
+                  </div>
+                  {inst.description && (
+                    <p className="mt-0.5 text-xs text-ds-text-muted break-all">
+                      {inst.description}
+                    </p>
                   )}
-                </p>
-                {inst.description && (
-                  <p className="text-xs text-gray-400 break-all">{inst.description}</p>
-                )}
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  {!inst.protected && (
+                    <Button variant="danger" size="sm" onClick={() => handleDelete(inst)}>
+                      削除
+                    </Button>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {!inst.protected && (
-                  <button
-                    onClick={() => del(inst)}
-                    className="text-xs text-red-600 hover:underline"
-                  >
-                    削除
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </Panel>
       )}
     </div>
   );
