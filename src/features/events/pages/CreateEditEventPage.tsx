@@ -301,7 +301,7 @@ export function CreateEditEventPage() {
                         handleAddCustomTiming();
                       }
                     }}
-                    placeholder="数値"
+                    placeholder="時間"
                     className="h-9"
                   />
                 </div>
