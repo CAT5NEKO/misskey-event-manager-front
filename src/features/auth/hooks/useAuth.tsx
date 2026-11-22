@@ -7,7 +7,8 @@ import {
   switchSession,
   clearAllSessions,
   getCurrentAccessToken,
-  updateActiveTokens,
+  getCurrentRefreshToken,
+  ensureValidToken,
 } from '@shared/api/client';
 import type { User, LoginResponse, CallbackResponse } from '@shared/types';
 
@@ -55,15 +56,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUser = useCallback(async () => {
     const token = getCurrentAccessToken();
-    if (!token) {
+    const refreshToken = getCurrentRefreshToken();
+
+    if (!token && !refreshToken) {
       setLoading(false);
       return;
     }
+
     try {
+      if (refreshToken) {
+        await ensureValidToken();
+      }
       const u = await api<User>('/auth/me');
       setUser(u);
     } catch {
-      setUser(null);
+      if (!getCurrentRefreshToken()) {
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }
