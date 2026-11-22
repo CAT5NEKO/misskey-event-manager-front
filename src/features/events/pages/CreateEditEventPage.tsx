@@ -1,14 +1,40 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '@shared/api/client';
 import type { CreateEventInput, UpdateEventInput, Event, EventLimitInfo } from '@shared/types';
-import { Header } from '@shared/components/Header';
-import { LoadingSpinner } from '@shared/components/LoadingSpinner';
+import {
+  Button,
+  Chip,
+  Field,
+  Info,
+  Input,
+  PageContainer,
+  PageHeader,
+  Panel,
+  Select,
+  Spinner,
+  Switch,
+  Tabs,
+  Textarea,
+} from '@design-system/index';
+
+const statusTabs = [
+  { value: 'active', label: '募集中' },
+  { value: 'cancelled', label: '中止' },
+  { value: 'completed', label: '終了' },
+];
+
+const timingPresets = [
+  { label: '1時間前', value: 60 },
+  { label: '1日前', value: 1440 },
+  { label: '3日前', value: 4320 },
+];
 
 export function CreateEditEventPage() {
   const { id } = useParams<{ id: string }>();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
@@ -57,11 +83,10 @@ export function CreateEditEventPage() {
   }, [isEdit, id, navigate]);
 
   useEffect(() => {
-    if (!isEdit) {
-      api<EventLimitInfo>('/events/remaining')
-        .then(setLimitInfo)
-        .catch(() => {});
-    }
+    if (isEdit) return;
+    api<EventLimitInfo>('/events/remaining')
+      .then(setLimitInfo)
+      .catch(() => {});
   }, [isEdit]);
 
   const validation = useMemo(() => {
@@ -72,25 +97,30 @@ export function CreateEditEventPage() {
     const dlDate = deadline ? new Date(deadline) : null;
     if (evDate && evDate < now) errors.push('予定日は現在より未来の日時を指定してください');
     if (dlDate && dlDate < now) errors.push('回答期限は現在より未来の日時を指定してください');
-    if (evDate && dlDate && dlDate > evDate)
+    if (evDate && dlDate && dlDate > evDate) {
       errors.push('回答期限は予定日より前に設定してください');
+    }
     return { errors, valid: errors.length === 0 };
   }, [title, eventDate, deadline]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setTouched(true);
     setError('');
     if (!validation.valid) return;
+
     setLoading(true);
     const timing = [...notifTiming];
     if (customTiming) {
-      const c = parseInt(customTiming, 10);
-      if (!isNaN(c) && c > 0 && !timing.includes(c)) timing.push(c);
+      const parsed = parseInt(customTiming, 10);
+      if (!isNaN(parsed) && parsed > 0 && !timing.includes(parsed)) {
+        timing.push(parsed);
+      }
     }
+
     try {
       if (isEdit && id) {
-        const inp: UpdateEventInput = {
+        const payload: UpdateEventInput = {
           title,
           description: description || undefined,
           location: location || undefined,
@@ -101,9 +131,9 @@ export function CreateEditEventPage() {
           status,
           link_only: linkOnly,
         };
-        await api(`/events/${id}`, { method: 'PUT', body: JSON.stringify(inp) });
+        await api(`/events/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
       } else {
-        const inp: CreateEventInput = {
+        const payload: CreateEventInput = {
           title,
           description: description || undefined,
           location: location || undefined,
@@ -113,184 +143,177 @@ export function CreateEditEventPage() {
           notification_timing: timing,
           link_only: linkOnly,
         };
-        await api('/events', { method: 'POST', body: JSON.stringify(inp) });
+        await api('/events', { method: 'POST', body: JSON.stringify(payload) });
       }
       navigate(isEdit ? `/events/${id}` : '/');
     } catch (err) {
       setError(err instanceof Error ? err.message : '保存に失敗しました');
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   };
 
   const fieldError = (field: string) => {
-    if (!touched) return null;
-    const v = validation.errors.find((e) => e.includes(field));
-    return v ? <p className="text-xs text-red-500 mt-1">{v}</p> : null;
+    if (!touched) return undefined;
+    return validation.errors.find((e) => e.includes(field));
   };
 
   const limitReached =
-    !isEdit && limitInfo && limitInfo.max > 0 && limitInfo.current >= limitInfo.max;
+    !isEdit && Boolean(limitInfo && limitInfo.max > 0 && limitInfo.current >= limitInfo.max);
 
-  const limitMessage = limitReached
-    ? `イベント数の上限（${limitInfo!.max}件）に達しています。新しいイベントを作成するには、既存のイベントを削除するか、完了/中止にしてください。`
-    : null;
+  const handleAddCustomTiming = () => {
+    const num = parseInt(customTiming, 10);
+    const unit = parseInt(timingUnit, 10);
+    if (isNaN(num) || num <= 0) return;
+    const value = num * unit;
+    if (!notifTiming.includes(value)) {
+      setNotifTiming([...notifTiming, value]);
+      setCustomTiming('');
+    }
+  };
+
+  if (fetchingEvent) {
+    return (
+      <PageContainer>
+        <div className="flex justify-center py-16">
+          <Spinner size="lg" />
+        </div>
+      </PageContainer>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        <h1 className="text-2xl font-bold mb-6">{isEdit ? 'イベント編集' : '新規イベント'}</h1>
-        {fetchingEvent ? (
-          <LoadingSpinner />
-        ) : (
-          <form
-            onSubmit={handleSubmit}
-            className="bg-white rounded-xl border border-gray-200 p-6 space-y-4"
-            onChange={() => setTouched(true)}
-          >
-            {limitReached && (
-              <div className="text-sm text-red-600 bg-red-50 rounded p-3">{limitMessage}</div>
-            )}
-            <div>
-              <label className="block text-sm font-medium mb-1">タイトル *</label>
-              <input
+    <PageContainer>
+      <PageHeader title={isEdit ? 'イベント編集' : '新規イベント'} />
+
+      <Panel className="p-5 sm:p-6">
+        <form onSubmit={handleSubmit} className="space-y-4" onChange={() => setTouched(true)}>
+          {limitReached && (
+            <Info tone="danger">
+              イベント数の上限（{limitInfo?.max}
+              件）に達しています。新しいイベントを作成するには、既存のイベントを削除するか、完了/中止にしてください。
+            </Info>
+          )}
+
+          <Field label="タイトル" required error={fieldError('タイトル')}>
+            <Input
+              type="text"
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                setTouched(true);
+              }}
+              maxLength={200}
+            />
+          </Field>
+
+          <Field label="説明">
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              maxLength={5000}
+            />
+          </Field>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="場所">
+              <Input
                 type="text"
-                value={title}
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                maxLength={255}
+              />
+            </Field>
+            <Field label="メモ">
+              <Input
+                type="text"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                maxLength={255}
+              />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="予定日" error={fieldError('予定日')}>
+              <Input
+                type="datetime-local"
+                value={eventDate}
                 onChange={(e) => {
-                  setTitle(e.target.value);
+                  setEventDate(e.target.value);
                   setTouched(true);
                 }}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                maxLength={200}
               />
-              {fieldError('タイトル')}
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">説明</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                rows={3}
-                maxLength={5000}
+            </Field>
+            <Field label="回答期限" error={fieldError('回答期限')}>
+              <Input
+                type="datetime-local"
+                value={deadline}
+                onChange={(e) => {
+                  setDeadline(e.target.value);
+                  setTouched(true);
+                }}
               />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">場所</label>
-                <input
-                  type="text"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  maxLength={255}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">メモ</label>
-                <input
-                  type="text"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  maxLength={255}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">予定日</label>
-                <input
-                  type="datetime-local"
-                  value={eventDate}
-                  onChange={(e) => {
-                    setEventDate(e.target.value);
-                    setTouched(true);
-                  }}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                />
-                {fieldError('予定日')}
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">回答期限</label>
-                <input
-                  type="datetime-local"
-                  value={deadline}
-                  onChange={(e) => {
-                    setDeadline(e.target.value);
-                    setTouched(true);
-                  }}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                />
-                {fieldError('回答期限')}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">通知タイミング（期限前）</label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {[
-                  { label: '1時間前', value: 60 },
-                  { label: '1日前', value: 1440 },
-                  { label: '3日前', value: 4320 },
-                ].map((preset) => {
+            </Field>
+          </div>
+
+          <Field label="通知タイミング（期限前）">
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                {timingPresets.map((preset) => {
                   const active = notifTiming.includes(preset.value);
                   return (
-                    <button
+                    <Button
                       key={preset.value}
                       type="button"
+                      variant={active ? 'primary' : 'secondary'}
+                      size="sm"
                       onClick={() => {
-                        if (active) setNotifTiming(notifTiming.filter((v) => v !== preset.value));
-                        else setNotifTiming([...notifTiming, preset.value]);
+                        if (active) {
+                          setNotifTiming(notifTiming.filter((v) => v !== preset.value));
+                        } else {
+                          setNotifTiming([...notifTiming, preset.value]);
+                        }
                       }}
-                      className={`px-3 py-1.5 rounded-md text-sm border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        active
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                      }`}
                     >
                       {preset.label}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
-              <div className="flex gap-2 items-center">
-                <input
-                  type="number"
-                  value={customTiming}
-                  onChange={(e) => setCustomTiming(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      const num = parseInt(customTiming, 10);
-                      const unit = parseInt(timingUnit, 10);
-                      if (!isNaN(num) && num > 0) {
-                        const v = num * unit;
-                        if (!notifTiming.includes(v)) {
-                          setNotifTiming([...notifTiming, v]);
-                          setCustomTiming('');
-                        }
+
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="w-24">
+                  <Input
+                    type="number"
+                    value={customTiming}
+                    onChange={(e) => setCustomTiming(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddCustomTiming();
                       }
-                    }
-                  }}
-                  className="w-24 px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                  min="1"
-                  placeholder="カスタム"
-                />
-                <select
-                  value={timingUnit}
-                  onChange={(e) => setTimingUnit(e.target.value)}
-                  className="px-2 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm"
-                >
-                  <option value="1">分</option>
-                  <option value="60">時間</option>
-                  <option value="1440">日</option>
-                  <option value="10080">週間</option>
-                </select>
-                <span className="text-xs text-gray-400">数値を入力して Enter</span>
+                    }}
+                    min="1"
+                    placeholder="カスタム"
+                  />
+                </div>
+                <div className="w-24">
+                  <Select value={timingUnit} onChange={(e) => setTimingUnit(e.target.value)}>
+                    <option value="1">分</option>
+                    <option value="60">時間</option>
+                    <option value="1440">日</option>
+                    <option value="10080">週間</option>
+                  </Select>
+                </div>
+                <Button type="button" variant="secondary" size="sm" onClick={handleAddCustomTiming}>
+                  追加
+                </Button>
               </div>
+
               {notifTiming.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
+                <div className="flex flex-wrap gap-1.5 pt-1">
                   {notifTiming.map((v) => {
                     const label =
                       v >= 10080
@@ -301,104 +324,51 @@ export function CreateEditEventPage() {
                             ? `${v / 60}時間前`
                             : `${v}分前`;
                     return (
-                      <span
+                      <Chip
                         key={v}
-                        className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded"
+                        onClick={() => setNotifTiming(notifTiming.filter((x) => x !== v))}
                       >
-                        {label}
-                        <button
-                          type="button"
-                          onClick={() => setNotifTiming(notifTiming.filter((x) => x !== v))}
-                          className="hover:text-red-500"
-                        >
-                          &times;
-                        </button>
-                      </span>
+                        <span>{label}</span>
+                        <span aria-hidden="true">&times;</span>
+                      </Chip>
                     );
                   })}
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-3 py-1">
-              <label className="text-sm font-medium select-none cursor-pointer">
-                リンクでのみ公開する
-              </label>
-              <button
-                type="button"
-                onClick={() => setLinkOnly(!linkOnly)}
-                className={`relative w-10 h-6 rounded-full transition-colors ${linkOnly ? 'bg-blue-600' : 'bg-gray-300'}`}
-              >
-                <span
-                  className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${linkOnly ? 'translate-x-4' : ''}`}
-                />
-              </button>
-            </div>
-            <p className="text-xs text-gray-400 -mt-2 mb-1">
-              オンにすると募集中一覧に表示されず、リンクを知っている人のみ参加できます
-            </p>
-            {isEdit && (
-              <div>
-                <label className="block text-sm font-medium mb-1.5">ステータス</label>
-                <div className="inline-flex flex-wrap rounded-lg border border-gray-200 bg-gray-100 p-1">
-                  {[
-                    { value: 'active', label: '募集中', activeCls: 'bg-white text-blue-700' },
-                    { value: 'cancelled', label: '中止', activeCls: 'bg-white text-red-700' },
-                    { value: 'completed', label: '終了', activeCls: 'bg-white text-gray-700' },
-                  ].map((opt) => {
-                    const active = status === opt.value;
-                    return (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => setStatus(opt.value)}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          active
-                            ? `${opt.activeCls} border border-gray-200`
-                            : 'text-gray-500 hover:text-gray-800'
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            {error && <p className="text-sm text-red-600 bg-red-50 rounded p-2">{error}</p>}
-            <div className="flex gap-2 pt-2">
-              {limitReached ? (
-                <div className="group relative inline-block">
-                  <button
-                    type="submit"
-                    disabled
-                    className="bg-blue-600 text-white px-6 py-2.5 rounded-lg border border-blue-600 opacity-50 cursor-not-allowed"
-                  >
-                    {loading ? '保存中...' : '保存'}
-                  </button>
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                    イベント数の上限（{limitInfo!.max}件）に達しています
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="submit"
-                  disabled={loading || (touched && !validation.valid)}
-                  className="bg-blue-600 text-white px-6 py-2.5 rounded-lg border border-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? '保存中...' : '保存'}
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => navigate(-1)}
-                className="bg-white text-gray-700 border border-gray-300 px-6 py-2.5 rounded-lg hover:bg-gray-50"
-              >
-                キャンセル
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
+          </Field>
+
+          <div className="border-t-[0.5px] border-ds-border pt-3">
+            <Switch
+              checked={linkOnly}
+              onChange={setLinkOnly}
+              label="リンクでのみ公開する"
+              description="オンにすると募集中一覧に表示されず、リンクを知っている人のみ参加できます"
+            />
+          </div>
+
+          {isEdit && (
+            <Field label="ステータス">
+              <Tabs items={statusTabs} value={status} onChange={setStatus} variant="segmented" />
+            </Field>
+          )}
+
+          {error && <Info tone="danger">{error}</Info>}
+
+          <div className="flex gap-2 pt-3">
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={loading || limitReached || (touched && !validation.valid)}
+            >
+              {loading ? '保存中...' : '保存'}
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => navigate(-1)}>
+              キャンセル
+            </Button>
+          </div>
+        </form>
+      </Panel>
+    </PageContainer>
   );
 }

@@ -1,22 +1,76 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import {
+  IconArrowLeft,
+  IconCheck,
+  IconEdit,
+  IconShare,
+  IconTrash,
+  IconBan,
+} from '@tabler/icons-react';
 import { api } from '@shared/api/client';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import type { Event } from '@shared/types';
-import { Header } from '@shared/components/Header';
-import { LoadingSpinner } from '@shared/components/LoadingSpinner';
+import {
+  Avatar,
+  Badge,
+  type BadgeTone,
+  Button,
+  ButtonLink,
+  Input,
+  PageContainer,
+  PageHeader,
+  Panel,
+  Spinner,
+  useConfirm,
+} from '@design-system/index';
+
+function getEventStatus(event: Event): { label: string; tone: BadgeTone } {
+  if (event.status === 'cancelled') return { label: '中止', tone: 'danger' };
+  if (event.status === 'completed') return { label: '終了', tone: 'neutral' };
+  if (event.deadline && new Date(event.deadline) < new Date()) {
+    return { label: '期限切れ', tone: 'warning' };
+  }
+  return { label: '募集中', tone: 'neutral' };
+}
+
+function getParticipantStatus(status: string): { label: string; tone: BadgeTone } {
+  if (status === 'attending') return { label: '参加', tone: 'success' };
+  if (status === 'pending') return { label: '検討中', tone: 'warning' };
+  if (status === 'declined') return { label: '不参加', tone: 'danger' };
+  return { label: status, tone: 'neutral' };
+}
+
+function formatDate(date: string | null) {
+  if (!date) return null;
+  return new Date(date).toLocaleDateString('ja-JP', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function timingLabel(min: number) {
+  if (min >= 1440) return `${min / 1440}日前`;
+  if (min >= 60) return `${min / 60}時間前`;
+  return `${min}分前`;
+}
 
 export function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const confirm = useConfirm();
+
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
   const [showComment, setShowComment] = useState(false);
   const [comment, setComment] = useState('');
   const [savingComment, setSavingComment] = useState(false);
-  const shareLabelRef = useRef<HTMLSpanElement>(null);
+  const [copied, setCopied] = useState(false);
   const mountedRef = useRef(true);
 
   const fetchEvent = async () => {
@@ -47,13 +101,10 @@ export function EventDetailPage() {
   const handleShare = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      const el = shareLabelRef.current;
-      if (el) {
-        el.textContent = 'コピーしました';
-        setTimeout(() => {
-          el.textContent = '共有';
-        }, 1500);
-      }
+      setCopied(true);
+      setTimeout(() => {
+        if (mountedRef.current) setCopied(false);
+      }, 1500);
     } catch {}
   };
 
@@ -63,9 +114,8 @@ export function EventDetailPage() {
     try {
       await api(`/events/${id}/join`, { method: 'POST', body: JSON.stringify({ status }) });
       await fetchEvent();
-    } catch {
     } finally {
-      setJoining(false);
+      if (mountedRef.current) setJoining(false);
     }
   };
 
@@ -79,9 +129,8 @@ export function EventDetailPage() {
       });
       setShowComment(false);
       await fetchEvent();
-    } catch {
     } finally {
-      setSavingComment(false);
+      if (mountedRef.current) setSavingComment(false);
     }
   };
 
@@ -94,9 +143,8 @@ export function EventDetailPage() {
         body: JSON.stringify({ status: event.current_user_status, comment: '' }),
       });
       await fetchEvent();
-    } catch {
     } finally {
-      setSavingComment(false);
+      if (mountedRef.current) setSavingComment(false);
     }
   };
 
@@ -106,293 +154,284 @@ export function EventDetailPage() {
     try {
       await api(`/events/${id}/join`, { method: 'DELETE' });
       await fetchEvent();
-    } catch {
     } finally {
-      setJoining(false);
+      if (mountedRef.current) setJoining(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm('このイベントを削除しますか？')) return;
+    const ok = await confirm({
+      title: 'イベント削除',
+      message: 'このイベントを削除しますか？この操作は取り消せません。',
+      danger: true,
+      confirmLabel: '削除',
+    });
+    if (!ok) return;
     await api(`/events/${id}`, { method: 'DELETE' });
     navigate('/');
   };
 
   const handleCancel = async () => {
-    if (!confirm('このイベントを中止にしますか？')) return;
+    const ok = await confirm({
+      title: 'イベント中止',
+      message: 'このイベントを中止にしますか？',
+      danger: true,
+      confirmLabel: '中止にする',
+    });
+    if (!ok) return;
     await api(`/events/${id}`, { method: 'PUT', body: JSON.stringify({ status: 'cancelled' }) });
     fetchEvent();
   };
 
-  const formatDate = (date: string | null) => {
-    if (!date) return null;
-    return new Date(date).toLocaleDateString('ja-JP', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const timingLabel = (min: number) => {
-    if (min >= 1440) return `${min / 1440}日前`;
-    if (min >= 60) return `${min / 60}時間前`;
-    return `${min}分前`;
-  };
-
-  if (loading)
+  if (loading) {
     return (
-      <div className="min-h-screen">
-        <Header />
-        <LoadingSpinner />
-      </div>
+      <PageContainer>
+        <div className="flex justify-center py-16">
+          <Spinner size="lg" />
+        </div>
+      </PageContainer>
     );
+  }
+
   if (!event) return null;
 
   const isCreator = user?.id === event.creator_id;
-  const isAdmin = user?.is_admin;
+  const isAdmin = Boolean(user?.is_admin);
   const isExpired =
-    event.status !== 'active' || (event.deadline && new Date(event.deadline) < new Date());
+    event.status !== 'active' || Boolean(event.deadline && new Date(event.deadline) < new Date());
+  const statusInfo = getEventStatus(event);
+
+  const attendingCount = event.participants?.filter((p) => p.status === 'attending').length || 0;
+  const pendingCount = event.participants?.filter((p) => p.status === 'pending').length || 0;
+  const declinedCount = event.participants?.filter((p) => p.status === 'declined').length || 0;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+    <PageContainer>
+      <div className="mb-4">
         <Link
           to="/"
-          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
+          className="inline-flex items-center gap-1 text-sm text-ds-text-muted hover:text-ds-text underline"
         >
-          &larr; 予定一覧に戻る
+          <IconArrowLeft size={16} />
+          <span>予定一覧に戻る</span>
         </Link>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
-          <div className="flex items-start justify-between mb-4">
-            <h1 className="text-xl sm:text-2xl font-bold">{event.title}</h1>
-            <div className="flex gap-2 items-center">
-              <button
-                onClick={handleShare}
-                className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                  />
-                </svg>
-                <span ref={shareLabelRef}>共有</span>
-              </button>
-              {(isCreator || isAdmin) && !isExpired && (
-                <Link
-                  to={`/events/${event.id}/edit`}
-                  className="text-sm text-blue-600 hover:underline"
-                >
-                  編集
-                </Link>
-              )}
-              {(isCreator || isAdmin) && event.status === 'active' && (
-                <button onClick={handleCancel} className="text-sm text-yellow-600 hover:underline">
-                  中止
-                </button>
-              )}
-              {(isCreator || isAdmin) && (
-                <button onClick={handleDelete} className="text-sm text-red-600 hover:underline">
-                  削除
-                </button>
-              )}
+      </div>
+
+      <Panel className="p-5 sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-ds-text">{event.title}</h1>
+            <div className="mt-2">
+              <Badge tone={statusInfo.tone}>{statusInfo.label}</Badge>
             </div>
           </div>
 
-          <span
-            className={`inline-block px-2 py-0.5 rounded text-xs mb-4 ${event.status === 'active' ? 'bg-blue-100 text-blue-700' : event.status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}
-          >
-            {event.status === 'active' ? '募集中' : event.status === 'cancelled' ? '中止' : '終了'}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={handleShare}>
+              {copied ? <IconCheck size={16} /> : <IconShare size={16} />}
+              <span>{copied ? 'コピー完了' : '共有'}</span>
+            </Button>
 
-          <dl className="space-y-3">
-            {event.location && (
-              <div>
-                <dt className="text-sm text-gray-500 font-medium">場所</dt>
-                <dd className="mt-0.5">{event.location}</dd>
-              </div>
+            {(isCreator || isAdmin) && !isExpired && (
+              <ButtonLink to={`/events/${event.id}/edit`} variant="secondary" size="sm">
+                <IconEdit size={16} />
+                <span>編集</span>
+              </ButtonLink>
             )}
-            {event.event_date && (
-              <div>
-                <dt className="text-sm text-gray-500 font-medium">予定日</dt>
-                <dd className="mt-0.5">{formatDate(event.event_date)}</dd>
-              </div>
-            )}
-            {event.deadline && (
-              <div>
-                <dt className="text-sm text-gray-500 font-medium">回答期限</dt>
-                <dd className="mt-0.5">{formatDate(event.deadline)}</dd>
-              </div>
-            )}
-            {event.description && (
-              <div>
-                <dt className="text-sm text-gray-500 font-medium">説明</dt>
-                <dd className="mt-0.5 whitespace-pre-wrap">{event.description}</dd>
-              </div>
-            )}
-            {event.notes && (
-              <div>
-                <dt className="text-sm text-gray-500 font-medium">メモ</dt>
-                <dd className="mt-0.5 whitespace-pre-wrap">{event.notes}</dd>
-              </div>
-            )}
-            {event.notification_timing && event.notification_timing.length > 0 && (
-              <div>
-                <dt className="text-sm text-gray-500 font-medium">通知タイミング</dt>
-                <dd className="mt-0.5">{event.notification_timing.map(timingLabel).join(', ')}</dd>
-              </div>
-            )}
-            {event.creator && (
-              <div>
-                <dt className="text-sm text-gray-500 font-medium">作成者</dt>
-                <dd className="mt-0.5">{event.creator.name}</dd>
-              </div>
-            )}
-          </dl>
 
-          {event.status === 'active' && !isExpired && (
-            <div className="mt-6 pt-4 border-t">
-              {!isCreator && (
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                  <div className="w-full grid grid-cols-3 rounded-lg border border-gray-200 bg-gray-100 p-0.5 sm:p-1">
-                    {([
-                      { value: 'attending', label: '参加', activeCls: 'bg-white text-green-700' },
-                      { value: 'pending', label: '検討中', activeCls: 'bg-white text-amber-700' },
-                      { value: 'declined', label: '不参加', activeCls: 'bg-white text-red-700' },
-                    ] as const).map((opt) => {
-                      const active = event.current_user_status === opt.value;
-                      return (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => handleJoin(opt.value)}
-                          disabled={joining}
-                          className={`px-3 py-1.5 sm:py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                            active
-                              ? `${opt.activeCls} border border-gray-200`
-                              : 'text-gray-500 hover:text-gray-800'
-                          } disabled:opacity-60`}
-                        >
-                          {opt.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {event.current_user_status && (
-                    <button
-                      type="button"
-                      onClick={handleLeave}
-                      disabled={joining}
-                      className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-60"
-                    >
-                      回答を取り消す
-                    </button>
-                  )}
+            {(isCreator || isAdmin) && event.status === 'active' && (
+              <Button variant="secondary" size="sm" onClick={handleCancel}>
+                <IconBan size={16} />
+                <span>中止</span>
+              </Button>
+            )}
+
+            {(isCreator || isAdmin) && (
+              <Button variant="danger" size="sm" onClick={handleDelete}>
+                <IconTrash size={16} />
+                <span>削除</span>
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <dl className="mt-6 space-y-4 border-t-[0.5px] border-ds-border pt-4">
+          {event.location && (
+            <div>
+              <dt className="text-xs font-medium text-ds-text-muted">場所</dt>
+              <dd className="mt-0.5 text-sm text-ds-text">{event.location}</dd>
+            </div>
+          )}
+          {event.event_date && (
+            <div>
+              <dt className="text-xs font-medium text-ds-text-muted">予定日</dt>
+              <dd className="mt-0.5 text-sm text-ds-text">{formatDate(event.event_date)}</dd>
+            </div>
+          )}
+          {event.deadline && (
+            <div>
+              <dt className="text-xs font-medium text-ds-text-muted">回答期限</dt>
+              <dd className="mt-0.5 text-sm text-ds-text">{formatDate(event.deadline)}</dd>
+            </div>
+          )}
+          {event.description && (
+            <div>
+              <dt className="text-xs font-medium text-ds-text-muted">説明</dt>
+              <dd className="mt-0.5 whitespace-pre-wrap text-sm text-ds-text">
+                {event.description}
+              </dd>
+            </div>
+          )}
+          {event.notes && (
+            <div>
+              <dt className="text-xs font-medium text-ds-text-muted">メモ</dt>
+              <dd className="mt-0.5 whitespace-pre-wrap text-sm text-ds-text">{event.notes}</dd>
+            </div>
+          )}
+          {event.notification_timing && event.notification_timing.length > 0 && (
+            <div>
+              <dt className="text-xs font-medium text-ds-text-muted">通知タイミング</dt>
+              <dd className="mt-0.5 text-sm text-ds-text">
+                {event.notification_timing.map(timingLabel).join(', ')}
+              </dd>
+            </div>
+          )}
+          {event.creator && (
+            <div>
+              <dt className="text-xs font-medium text-ds-text-muted">作成者</dt>
+              <dd className="mt-0.5 text-sm text-ds-text">{event.creator.name}</dd>
+            </div>
+          )}
+        </dl>
+
+        {event.status === 'active' && !isExpired && (
+          <div className="mt-6 border-t-[0.5px] border-ds-border pt-5">
+            {!isCreator && (
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="grid w-full grid-cols-3 gap-1 rounded-ds-md border-[0.5px] border-ds-border bg-ds-surface-hover p-1">
+                  {(
+                    [
+                      { value: 'attending', label: '参加' },
+                      { value: 'pending', label: '検討中' },
+                      { value: 'declined', label: '不参加' },
+                    ] as const
+                  ).map((opt) => {
+                    const active = event.current_user_status === opt.value;
+                    return (
+                      <Button
+                        key={opt.value}
+                        type="button"
+                        variant={active ? 'primary' : 'ghost'}
+                        size="sm"
+                        disabled={joining}
+                        onClick={() => handleJoin(opt.value)}
+                      >
+                        {opt.label}
+                      </Button>
+                    );
+                  })}
                 </div>
-              )}
+                {event.current_user_status && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={joining}
+                    onClick={handleLeave}
+                  >
+                    回答を取り消す
+                  </Button>
+                )}
+              </div>
+            )}
 
-              {!isCreator && event.current_user_status && (
-                <div className="mt-3">
-                  {showComment ? (
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <div className="flex-1">
-                        <input
-                          type="text"
-                          value={comment}
-                          onChange={(e) => setComment(e.target.value)}
-                          placeholder="一言コメント"
-                          maxLength={50}
-                          className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                        />
-                        <div className="text-xs text-gray-400 text-right mt-0.5">
-                          {comment.length}/50
-                        </div>
+            {!isCreator && event.current_user_status && (
+              <div className="mt-4">
+                {showComment ? (
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                    <div className="flex-1">
+                      <Input
+                        type="text"
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        placeholder="一言コメント"
+                        maxLength={50}
+                      />
+                      <div className="mt-1 text-right text-xs text-ds-text-muted">
+                        {comment.length}/50
                       </div>
-                      <div className="flex gap-2 shrink-0">
-                        <button
-                          onClick={handleSaveComment}
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        disabled={savingComment}
+                        onClick={handleSaveComment}
+                      >
+                        {savingComment ? '保存中' : '保存'}
+                      </Button>
+                      {comment && (
+                        <Button
+                          variant="danger"
+                          size="sm"
                           disabled={savingComment}
-                          className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
+                          onClick={handleDeleteComment}
                         >
-                          {savingComment ? '保存中' : '保存'}
-                        </button>
-                        {comment && (
-                          <button
-                            onClick={handleDeleteComment}
-                            disabled={savingComment}
-                            className="text-sm text-red-500 hover:text-red-700 py-2"
-                          >
-                            削除
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setShowComment(true)}
-                      className="text-sm text-gray-400 hover:text-blue-600"
-                    >
-                      {comment ? 'コメントを編集' : '+ 一言コメント'}
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="mt-6 bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold mb-3">参加者</h2>
-          {event.participants && event.participants.length > 0 ? (
-            <div className="space-y-2">
-              <div className="flex gap-4 text-sm text-gray-500 mb-2">
-                <span className="text-green-600 font-medium">
-                  参加: {event.participants.filter((p) => p.status === 'attending').length}
-                </span>
-                <span className="text-amber-600 font-medium">
-                  検討中: {event.participants.filter((p) => p.status === 'pending').length}
-                </span>
-                <span className="text-red-600 font-medium">
-                  不参加: {event.participants.filter((p) => p.status === 'declined').length}
-                </span>
-              </div>
-              {event.participants.map((p) => (
-                <div key={p.id} className="py-2 border-b last:border-0">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {p.user?.avatar_url ? (
-                        <img
-                          src={p.user.avatar_url}
-                          alt=""
-                          className="w-8 h-8 rounded-full bg-gray-200 shrink-0"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-500 text-xs font-bold shrink-0">
-                          {(p.user?.name || '?')[0]}
-                        </div>
+                          削除
+                        </Button>
                       )}
-                      <span className="font-medium text-sm">{p.user?.name || 'Unknown'}</span>
                     </div>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded shrink-0 ${p.status === 'attending' ? 'bg-green-100 text-green-700' : p.status === 'pending' ? 'bg-amber-100 text-amber-700' : p.status === 'declined' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}
-                    >
-                      {({ attending: '参加', pending: '検討中', declined: '不参加' } as Record<string, string>)[p.status] || p.status}
-                    </span>
                   </div>
-                  {p.comment && <p className="text-xs text-gray-400 mt-0.5 ml-11">{p.comment}</p>}
-                </div>
-              ))}
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowComment(true)}
+                    className="text-xs text-ds-text-muted hover:text-ds-text underline"
+                  >
+                    {comment ? 'コメントを編集' : '+ 一言コメントを追加'}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </Panel>
+
+      <Panel className="mt-6 p-5 sm:p-6">
+        <h2 className="text-base font-bold text-ds-text">参加者</h2>
+        {event.participants && event.participants.length > 0 ? (
+          <div className="mt-3 space-y-2">
+            <div className="flex flex-wrap gap-4 text-xs font-medium text-ds-text-muted">
+              <span>参加: {attendingCount}</span>
+              <span>検討中: {pendingCount}</span>
+              <span>不参加: {declinedCount}</span>
             </div>
-          ) : (
-            <p className="text-sm text-gray-500">まだ参加者がいません</p>
-          )}
-        </div>
-      </div>
-    </div>
+            <div className="divide-y-[0.5px] divide-ds-border">
+              {event.participants.map((p) => {
+                const pStatus = getParticipantStatus(p.status);
+                return (
+                  <div key={p.id} className="py-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <Avatar src={p.user?.avatar_url} name={p.user?.name} size="sm" />
+                        <span className="text-sm font-medium text-ds-text">
+                          {p.user?.name || 'Unknown'}
+                        </span>
+                      </div>
+                      <Badge tone={pStatus.tone}>{pStatus.label}</Badge>
+                    </div>
+                    {p.comment && (
+                      <p className="mt-1 pl-8 text-xs text-ds-text-muted">{p.comment}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-ds-text-muted">まだ参加者がいません</p>
+        )}
+      </Panel>
+    </PageContainer>
   );
 }
