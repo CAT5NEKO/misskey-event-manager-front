@@ -1,9 +1,7 @@
-import { BrowserRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { useAuth, AuthProvider } from '@features/auth/hooks/useAuth';
-import { useAppName } from '@shared/hooks/useAppName';
 import { LoadingSpinner } from '@shared/components/LoadingSpinner';
 import { ErrorBoundary } from '@shared/components/ErrorBoundary';
-import { AccountSwitcher } from '@features/auth/components/AccountSwitcher';
 import { AdminLayout } from '@features/admin/components/AdminLayout';
 import { LoginPage } from '@features/auth/pages/LoginPage';
 import { CallbackPage } from '@features/auth/pages/CallbackPage';
@@ -17,83 +15,36 @@ import { UserManagePage } from '@features/admin/pages/UserManagePage';
 import { EventManagePage } from '@features/admin/pages/EventManagePage';
 import { AuditLogsPage } from '@features/admin/pages/AuditLogsPage';
 import { AdminSettingsPage } from '@features/admin/pages/AdminSettingsPage';
+import { AppLayout, DialogProvider } from '@design-system/index';
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function ProtectedLayout() {
   const { user, loading } = useAuth();
-  if (loading) return <LoadingSpinner />;
-  if (!user) return <Navigate to="/login" state={{ reason: 'セッションの有効期限が切れました' }} />;
-  return <>{children}</>;
-}
 
-function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  if (loading) return <LoadingSpinner />;
-  if (!user) return <Navigate to="/login" state={{ reason: 'セッションの有効期限が切れました' }} />;
-  if (!user.is_admin) return <Navigate to="/" />;
-  return <>{children}</>;
-}
+  if (loading) return <LoadingSpinner fullPage />;
+  if (!user) {
+    return <Navigate to="/login" state={{ reason: 'セッションの有効期限が切れました' }} />;
+  }
 
-function AdminHeader() {
-  const { logout } = useAuth();
-  const appName = useAppName();
   return (
-    <header className="bg-white border-b border-gray-200">
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2 sm:gap-6">
-          <Link to="/" className="text-lg sm:text-xl font-bold text-blue-600 shrink-0">
-            {appName}
-          </Link>
-          <Link
-            to="/events/new"
-            className="text-xs sm:text-sm bg-blue-600 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-md hover:bg-blue-700 whitespace-nowrap"
-          >
-            新規イベント
-          </Link>
-        </div>
-        <nav className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
-          <Link to="/" className="text-gray-600 hover:text-gray-800 hidden sm:inline">
-            予定管理
-          </Link>
-          <Link to="/admin" className="text-gray-600 hover:text-gray-800 hidden sm:inline">
-            管理者設定
-          </Link>
-          <Link to="/settings" className="text-gray-600 hover:text-gray-800 hidden sm:inline">
-            ユーザー設定
-          </Link>
-          <AccountSwitcher />
-          <button
-            onClick={async () => {
-              await logout();
-              window.location.href = '/login';
-            }}
-            className="text-red-600 hover:text-red-800 whitespace-nowrap"
-          >
-            ログアウト
-          </button>
-        </nav>
-      </div>
-    </header>
+    <AppLayout>
+      <Outlet />
+    </AppLayout>
   );
 }
 
-const TABLE_LIST_ROUTES = ['/admin/users', '/admin/events', '/admin/audit-logs'];
+function AdminLayoutRoute() {
+  const { user, loading } = useAuth();
 
-function AdminPage({ children }: { children: React.ReactNode }) {
-  const { pathname } = useLocation();
-  const tableList = TABLE_LIST_ROUTES.includes(pathname);
+  if (loading) return <LoadingSpinner fullPage />;
+  if (!user) {
+    return <Navigate to="/login" state={{ reason: 'セッションの有効期限が切れました' }} />;
+  }
+  if (!user.is_admin) return <Navigate to="/" />;
+
   return (
-    <AdminRoute>
-      <div className="h-dvh flex flex-col bg-gray-50">
-        <AdminHeader />
-        <div
-          className={`flex-1 min-h-0 overflow-y-auto max-w-6xl mx-auto w-full px-4 py-6 ${
-            tableList ? 'admin-page-scroll-hidden' : ''
-          }`}
-        >
-          <AdminLayout>{children}</AdminLayout>
-        </div>
-      </div>
-    </AdminRoute>
+    <AdminLayout>
+      <Outlet />
+    </AdminLayout>
   );
 }
 
@@ -102,94 +53,21 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/auth/callback" element={<CallbackPage />} />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <HomePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/events/new"
-        element={
-          <ProtectedRoute>
-            <CreateEditEventPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/events/:id"
-        element={
-          <ProtectedRoute>
-            <EventDetailPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/events/:id/edit"
-        element={
-          <ProtectedRoute>
-            <CreateEditEventPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/settings"
-        element={
-          <ProtectedRoute>
-            <SettingsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin"
-        element={
-          <AdminPage>
-            <DashboardPage />
-          </AdminPage>
-        }
-      />
-      <Route
-        path="/admin/instances"
-        element={
-          <AdminPage>
-            <InstanceManagePage />
-          </AdminPage>
-        }
-      />
-      <Route
-        path="/admin/users"
-        element={
-          <AdminPage>
-            <UserManagePage />
-          </AdminPage>
-        }
-      />
-      <Route
-        path="/admin/events"
-        element={
-          <AdminPage>
-            <EventManagePage />
-          </AdminPage>
-        }
-      />
-      <Route
-        path="/admin/audit-logs"
-        element={
-          <AdminPage>
-            <AuditLogsPage />
-          </AdminPage>
-        }
-      />
-      <Route
-        path="/admin/settings"
-        element={
-          <AdminPage>
-            <AdminSettingsPage />
-          </AdminPage>
-        }
-      />
+      <Route element={<ProtectedLayout />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/events/new" element={<CreateEditEventPage />} />
+        <Route path="/events/:id" element={<EventDetailPage />} />
+        <Route path="/events/:id/edit" element={<CreateEditEventPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route element={<AdminLayoutRoute />}>
+          <Route path="/admin" element={<DashboardPage />} />
+          <Route path="/admin/instances" element={<InstanceManagePage />} />
+          <Route path="/admin/users" element={<UserManagePage />} />
+          <Route path="/admin/events" element={<EventManagePage />} />
+          <Route path="/admin/audit-logs" element={<AuditLogsPage />} />
+          <Route path="/admin/settings" element={<AdminSettingsPage />} />
+        </Route>
+      </Route>
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
@@ -200,7 +78,9 @@ export default function App() {
     <BrowserRouter>
       <ErrorBoundary>
         <AuthProvider>
-          <AppRoutes />
+          <DialogProvider>
+            <AppRoutes />
+          </DialogProvider>
         </AuthProvider>
       </ErrorBoundary>
     </BrowserRouter>

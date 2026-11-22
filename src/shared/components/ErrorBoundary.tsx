@@ -1,4 +1,7 @@
 import { Component, type ReactNode } from 'react';
+import { IconAlertTriangle } from '@tabler/icons-react';
+import { Button } from '@design-system/primitives/Button';
+import { Panel } from '@design-system/primitives/Panel';
 
 interface Props {
   children: ReactNode;
@@ -19,25 +22,28 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 max-w-md text-center">
-            <h1 className="text-lg font-bold text-red-600 mb-2">エラーが発生しました</h1>
-            <p className="text-sm text-gray-500 mb-4">
+        <div className="flex min-h-dvh items-center justify-center bg-ds-bg p-4">
+          <Panel className="w-full max-w-md p-8 text-center">
+            <IconAlertTriangle size={32} className="mx-auto text-ds-danger" aria-hidden="true" />
+            <h1 className="mt-3 text-lg font-bold text-ds-text">エラーが発生しました</h1>
+            <p className="mt-2 text-sm text-ds-text-muted">
               {this.state.error?.message || '予期しないエラーが発生しました'}
             </p>
-            <button
+            <Button
+              variant="primary"
+              className="mt-5"
               onClick={() => {
                 this.setState({ hasError: false, error: null });
                 window.location.href = '/';
               }}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm"
             >
               トップに戻る
-            </button>
-          </div>
+            </Button>
+          </Panel>
         </div>
       );
     }
+
     return this.props.children;
   }
 }

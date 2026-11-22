@@ -20,7 +20,10 @@ export function useRemainingHeight({
       let last = -1;
       const update = () => {
         if (el.offsetWidth === 0) return;
-        const next = Math.max(minHeight, window.innerHeight - el.getBoundingClientRect().top - offset);
+        const next = Math.max(
+          minHeight,
+          window.innerHeight - el.getBoundingClientRect().top - offset,
+        );
         if (last !== next) {
           last = next;
           setMaxHeight(next);
