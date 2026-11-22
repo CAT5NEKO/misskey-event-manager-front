@@ -57,7 +57,7 @@ export function AdminSettingsPage() {
                   .filter((n) => !isNaN(n))
               : val;
         } else if (key === 'events.max_per_user') {
-          payload[key] = typeof val === 'string' ? parseInt(val, 10) : Number(val);
+          payload[key] = typeof val === 'string' ? parseInt(val, 10) || 0 : Number(val) || 0;
         } else {
           payload[key] = val;
         }
@@ -95,12 +95,17 @@ export function AdminSettingsPage() {
     ? (settings['notification.default_timing'] as number[]).join(',')
     : String(settings['notification.default_timing'] || '');
 
+  const maxEventsValue =
+    settings['events.max_per_user'] !== undefined && settings['events.max_per_user'] !== null
+      ? String(settings['events.max_per_user'])
+      : '0';
+
   return (
-    <div>
+    <div className="max-w-2xl">
       <PageHeader title="システム設定" />
 
       <Panel className="p-5 sm:p-6">
-        <div className="space-y-4">
+        <div className="space-y-6">
           <Field label="アプリ名">
             <Input
               type="text"
@@ -123,12 +128,13 @@ export function AdminSettingsPage() {
           <Field label="最大イベント数" hint="0 = 無制限">
             <Input
               type="number"
-              value={Number(settings['events.max_per_user'] || 0)}
+              min="0"
+              value={maxEventsValue}
               onChange={(e) => updateSetting('events.max_per_user', e.target.value)}
             />
           </Field>
 
-          <div className="border-t-[0.5px] border-ds-border pt-2">
+          <div className="border-t-[0.5px] border-ds-border pt-4">
             <Switch
               checked={Boolean(settings['users.allow_self_delete'])}
               onChange={(checked) => updateSetting('users.allow_self_delete', checked)}
