@@ -1,0 +1,64 @@
+:root {
+  color-scheme: light;
+
+  --ds-color-bg: #f9f9f9;
+  --ds-color-surface: #ffffff;
+  --ds-color-surface-hover: #f7f7f7;
+  --ds-color-surface-active: #f2f2f2;
+  --ds-color-border: #e8e8e8;
+  --ds-color-border-strong: rgba(0, 0, 0, 0.2);
+  --ds-color-text: #676767;
+  --ds-color-text-strong: #4f4f4f;
+  --ds-color-text-muted: #8a8a8a;
+  --ds-color-text-inverse: #ffffff;
+
+  --ds-color-accent: #86b300;
+  --ds-color-accent-hover: #789f00;
+  --ds-color-accent-subtle: rgba(134, 179, 0, 0.15);
+  --ds-color-on-accent: #ffffff;
+
+  --ds-color-danger: #ec4137;
+  --ds-color-danger-hover: #d6362d;
+  --ds-color-danger-subtle: rgba(236, 65, 55, 0.12);
+  --ds-color-danger-text: #c7352d;
+
+  --ds-color-warning: #ecb637;
+  --ds-color-warning-subtle: #fff0db;
+  --ds-color-warning-text: #8f6e31;
+
+  --ds-color-success: #86b300;
+  --ds-color-success-subtle: rgba(134, 179, 0, 0.15);
+  --ds-color-success-text: #5a7a00;
+
+  --ds-color-info: #676767;
+  --ds-color-info-subtle: #f2f2f2;
+  --ds-color-info-text: #676767;
+
+  --ds-color-overlay: rgba(0, 0, 0, 0.3);
+  --ds-color-focus: rgba(134, 179, 0, 0.3);
+  --ds-color-shadow: rgba(0, 0, 0, 0.1);
+  --ds-color-scrollbar: rgba(0, 0, 0, 0.2);
+  --ds-color-scrollbar-hover: rgba(0, 0, 0, 0.4);
+
+  --ds-radius-sm: 5px;
+  --ds-radius-md: 6px;
+  --ds-radius-lg: 12px;
+  --ds-radius-full: 999px;
+
+  --ds-font-family:
+    'Hiragino Maru Gothic Pro', 'BIZ UDGothic', Roboto, HelveticaNeue, Arial, sans-serif;
+  --ds-font-size-base: 14px;
+  --ds-line-height: 1.35;
+
+  --ds-sidebar-width: 250px;
+  --ds-sidebar-icon-width: 80px;
+  --ds-bottom-nav-height: 72px;
+  --ds-content-max-width: 760px;
+  --ds-content-wide-max-width: 1120px;
+  --ds-min-bottom-spacing-mobile: calc(
+    var(--ds-bottom-nav-height) + max(12px, env(safe-area-inset-bottom, 0px))
+  );
+
+  --ds-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --ds-shadow-top: 0 -4px 8px -6px rgba(0, 0, 0, 0.2);
+}
