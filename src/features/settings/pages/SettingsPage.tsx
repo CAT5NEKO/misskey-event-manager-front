@@ -1,121 +1,154 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { api } from '@shared/api/client';
-import { Header } from '@shared/components/Header';
+import {
+  Badge,
+  Button,
+  ButtonLink,
+  PageContainer,
+  PageHeader,
+  Panel,
+  useAlert,
+  useConfirm,
+} from '@design-system/index';
+
 export function SettingsPage() {
   const { user, sessions, activeIndex, switchAccount, logout, deleteAccount } = useAuth();
   const navigate = useNavigate();
+  const confirm = useConfirm();
+  const alert = useAlert();
+
   const [deleting, setDeleting] = useState(false);
   const [allowSelfDelete, setAllowSelfDelete] = useState(true);
+
   useEffect(() => {
     api<{ allow_self_delete: boolean }>('/app/config')
       .then((r) => setAllowSelfDelete(r.allow_self_delete))
       .catch(() => {});
   }, []);
+
   const handleLogout = async () => {
     await logout();
     if (sessions.length <= 1) navigate('/login');
   };
+
   const handleDelete = async () => {
-    if (
-      !confirm(
+    const firstConfirm = await confirm({
+      title: 'アカウント削除',
+      message:
         '本当にアカウントを削除しますか？すべてのデータが完全に削除されます。この操作は取り消せません。',
-      )
-    )
-      return;
-    if (!confirm('確認のため、もう一度「OK」を押してください。')) return;
+      danger: true,
+      confirmLabel: '削除する',
+    });
+    if (!firstConfirm) return;
+
+    const secondConfirm = await confirm({
+      title: '最終確認',
+      message: '確認のため、もう一度「削除する」を押してください。',
+      danger: true,
+      confirmLabel: '完全に削除する',
+    });
+    if (!secondConfirm) return;
+
     setDeleting(true);
     try {
       await deleteAccount();
       if (sessions.length <= 1) navigate('/login');
     } catch {
       setDeleting(false);
-      alert('削除に失敗しました');
+      await alert({
+        title: 'エラー',
+        message: '削除に失敗しました',
+        tone: 'danger',
+      });
     }
   };
+
   if (!user) return null;
   const canDelete = allowSelfDelete && !user.is_admin;
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        <h1 className="text-2xl font-bold mb-6">アカウント設定</h1>
+    <PageContainer>
+      <PageHeader title="アカウント設定" />
+
+      <div className="space-y-4">
         {sessions.length > 1 && (
-          <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
-            <h2 className="text-sm font-medium mb-3">アカウント一覧</h2>
-            <div className="space-y-1">
+          <Panel className="p-5 sm:p-6">
+            <h2 className="text-sm font-bold text-ds-text">アカウント一覧</h2>
+            <div className="mt-3 space-y-1">
               {sessions.map((s, i) => (
                 <button
                   key={s.userId}
+                  type="button"
                   onClick={() => switchAccount(i).then(() => navigate('/'))}
-                  className={`w-full text-left px-3 py-2 rounded text-sm flex items-center gap-2 ${i === activeIndex ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                  className={`flex w-full items-center gap-2.5 rounded-ds-md px-3 py-2 text-left text-sm transition-colors ${
+                    i === activeIndex
+                      ? 'bg-ds-surface-hover font-medium text-ds-text-strong'
+                      : 'text-ds-text hover:bg-ds-surface-hover'
+                  }`}
                 >
                   <span
-                    className={`w-2 h-2 rounded-full ${i === activeIndex ? 'bg-green-500' : 'bg-gray-300'}`}
+                    className={`h-2 w-2 rounded-ds-full ${
+                      i === activeIndex ? 'bg-ds-accent' : 'bg-ds-border-strong'
+                    }`}
                   />
-                  <span className="font-medium">{s.name}</span>
-                  <span className="text-gray-400 text-xs">
+                  <span className="truncate">{s.name}</span>
+                  <span className="truncate text-xs text-ds-text-muted">
                     @{s.username}@{s.host}
                   </span>
                   {i === activeIndex && (
-                    <span className="text-xs text-green-600 ml-auto">現在</span>
+                    <Badge tone="success" className="ml-auto">
+                      現在
+                    </Badge>
                   )}
                 </button>
               ))}
             </div>
-          </div>
+          </Panel>
         )}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-          <div>
-            <h2 className="text-sm text-gray-500">ユーザー名</h2>
-            <p className="font-medium">{user.name}</p>
-          </div>
-          <div>
-            <h2 className="text-sm text-gray-500">Misskeyサーバー</h2>
-            <p className="font-medium">{user.misskey_host}</p>
-          </div>
-          <div>
-            <h2 className="text-sm text-gray-500">Misskeyユーザー</h2>
-            <p className="font-medium">@{user.misskey_username}</p>
-          </div>
-          {user.is_admin && (
+
+        <Panel className="p-5 sm:p-6">
+          <dl className="space-y-4">
             <div>
-              <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
-                管理者
-              </span>
+              <dt className="text-xs font-medium text-ds-text-muted">ユーザー名</dt>
+              <dd className="mt-0.5 text-sm font-medium text-ds-text">{user.name}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-ds-text-muted">Misskeyサーバー</dt>
+              <dd className="mt-0.5 text-sm font-medium text-ds-text">{user.misskey_host}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-ds-text-muted">Misskeyユーザー</dt>
+              <dd className="mt-0.5 text-sm font-medium text-ds-text">@{user.misskey_username}</dd>
+            </div>
+            {user.is_admin && (
+              <div>
+                <dt className="text-xs font-medium text-ds-text-muted">ロール</dt>
+                <dd className="mt-1">
+                  <Badge tone="warning">管理者</Badge>
+                </dd>
+              </div>
+            )}
+          </dl>
+        </Panel>
+
+        <div className="space-y-3">
+          <ButtonLink to="/login?add=1" variant="secondary" fullWidth>
+            アカウントを追加
+          </ButtonLink>
+          <Button variant="secondary" fullWidth onClick={handleLogout}>
+            ログアウト
+          </Button>
+          {canDelete && (
+            <div className="pt-2">
+              <Button variant="danger" fullWidth disabled={deleting} onClick={handleDelete}>
+                {deleting ? '削除中...' : 'アカウントを削除'}
+              </Button>
             </div>
           )}
         </div>
-        <div className="mt-4 space-y-3">
-          <Link
-            to="/login?add=1"
-            className="block w-full text-center bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 text-sm"
-          >
-            アカウントを追加
-          </Link>
-          <button
-            onClick={handleLogout}
-            className="w-full bg-white text-gray-700 border border-gray-300 py-2.5 rounded-lg hover:bg-gray-50"
-          >
-            ログアウト
-          </button>
-          {canDelete && (
-            <>
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
-                この操作を行うと、あなたの作成した予定・参加情報を含むすべてのデータが完全に削除され、復元できません。
-              </div>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="w-full bg-red-600 text-white py-2.5 rounded-lg hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleting ? '削除中...' : 'アカウントを削除'}
-              </button>
-            </>
-          )}
-        </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }
