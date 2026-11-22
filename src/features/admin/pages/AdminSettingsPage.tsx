@@ -101,7 +101,7 @@ export function AdminSettingsPage() {
       : '0';
 
   return (
-    <div className="max-w-2xl">
+    <div>
       <PageHeader title="システム設定" />
 
       <Panel className="p-5 sm:p-6">
