@@ -57,7 +57,7 @@ export function Sidebar() {
 
   return (
     <aside className="hidden w-[var(--ds-sidebar-icon-width)] shrink-0 flex-col border-r-[0.5px] border-ds-border bg-ds-surface min-[501px]:flex min-[1280px]:w-[var(--ds-sidebar-width)]">
-      <div className="flex h-20 shrink-0 items-center gap-2 px-3 max-[1279px]:justify-center max-[1279px]:px-0">
+      <div className="flex h-20 shrink-0 items-center gap-2 px-4 max-[1279px]:justify-center max-[1279px]:px-0">
         <Link to="/" className="flex min-w-0 items-center gap-2">
           <AppLogo className="h-[38px] w-[38px] shrink-0 max-[1279px]:h-[30px] max-[1279px]:w-[30px]" />
           <span className="truncate text-sm font-bold text-ds-text max-[1279px]:hidden">
@@ -73,17 +73,19 @@ export function Sidebar() {
         {user?.is_admin && <SidebarLink to="/admin" label="管理者設定" icon={IconShield} />}
       </nav>
 
-      <div className="shrink-0 border-t-[0.5px] border-ds-border p-2">
+      <div className="shrink-0 border-t-[0.5px] border-ds-border px-[17px] py-3 max-[1279px]:flex max-[1279px]:flex-col max-[1279px]:items-center max-[1279px]:px-0">
         <ButtonLink
           to="/events/new"
           variant="primary"
           fullWidth
-          className="mb-2 rounded-ds-full max-[1279px]:mx-auto max-[1279px]:h-11 max-[1279px]:w-11 max-[1279px]:min-w-0 max-[1279px]:px-0"
-          leftIcon={<IconPlus size={18} aria-hidden="true" />}
+          className="mb-2.5 h-10 rounded-ds-full max-[1279px]:h-10 max-[1279px]:w-10 max-[1279px]:min-w-0 max-[1279px]:gap-0 max-[1279px]:p-0"
         >
-          <span className="max-[1279px]:hidden">新規イベント</span>
+          <IconPlus size={18} aria-hidden="true" className="shrink-0" />
+          <span className="ml-1.5 max-[1279px]:hidden">新規イベント</span>
         </ButtonLink>
-        <AccountSwitcher variant="sidebar" />
+        <div className="w-full max-[1279px]:flex max-[1279px]:justify-center">
+          <AccountSwitcher variant="sidebar" />
+        </div>
       </div>
     </aside>
   );
