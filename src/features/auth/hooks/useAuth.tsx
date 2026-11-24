@@ -9,6 +9,7 @@ import {
   getCurrentAccessToken,
   getCurrentRefreshToken,
   ensureValidToken,
+  isTokenExpiringSoon,
 } from '@shared/api/client';
 import type { User, LoginResponse, CallbackResponse } from '@shared/types';
 
@@ -64,8 +65,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      if (refreshToken) {
-        await ensureValidToken();
+      if (!token || isTokenExpiringSoon(token, 60)) {
+        if (refreshToken) {
+          await ensureValidToken();
+        }
       }
       const u = await api<User>('/auth/me');
       setUser(u);

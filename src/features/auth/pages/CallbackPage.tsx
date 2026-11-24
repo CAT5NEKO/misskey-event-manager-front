@@ -16,10 +16,24 @@ export function CallbackPage() {
     ranRef.current = true;
 
     const session = searchParams.get('session');
+    const storedSession = localStorage.getItem('miauth_session_id') || '';
     const csrfToken = localStorage.getItem('miauth_csrf_token') || '';
     const isAdd = localStorage.getItem('miauth_is_add') === '1';
 
-    if (!session) {
+    const clearPending = () => {
+      localStorage.removeItem('miauth_session_id');
+      localStorage.removeItem('miauth_csrf_token');
+      localStorage.removeItem('miauth_is_add');
+    };
+
+    if (!session || !storedSession || storedSession !== session) {
+      clearPending();
+      setError('認証セッションが一致しません。もう一度ログインしてください。');
+      setLoading(false);
+      return;
+    }
+    if (!csrfToken) {
+      clearPending();
       setError('認証情報が見つかりません');
       setLoading(false);
       return;
@@ -29,12 +43,11 @@ export function CallbackPage() {
 
     cb(session, csrfToken)
       .then(() => {
-        localStorage.removeItem('miauth_session_id');
-        localStorage.removeItem('miauth_csrf_token');
-        localStorage.removeItem('miauth_is_add');
+        clearPending();
         navigate(isAdd ? '/settings' : '/');
       })
       .catch((err) => {
+        clearPending();
         setError(err.message || '認証に失敗しました');
         setLoading(false);
       });

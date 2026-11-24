@@ -44,7 +44,18 @@ window.addEventListener('storage', (e) => {
   }
 });
 
-let refreshPromise: Promise<boolean> | null = null;
+const refreshPromises = new Map<string, Promise<boolean>>();
+
+interface RefreshLockManager {
+  request<T>(name: string, callback: () => Promise<T>): Promise<T>;
+}
+
+async function withRefreshLock<T>(callback: () => Promise<T>): Promise<T> {
+  if (typeof navigator === 'undefined') return callback();
+  const locks = (navigator as unknown as { locks?: RefreshLockManager }).locks;
+  if (!locks) return callback();
+  return locks.request('miSchedule-token-refresh', callback);
+}
 
 export function getSessions(): Session[] {
   return sessions;
@@ -69,7 +80,9 @@ export function addSession(session: Session) {
 
 export function removeSession(index: number) {
   sessions.splice(index, 1);
-  if (activeIndex >= sessions.length) {
+  if (index < activeIndex) {
+    activeIndex--;
+  } else if (activeIndex >= sessions.length) {
     activeIndex = Math.max(0, sessions.length - 1);
   }
   saveSessions(sessions);
@@ -100,13 +113,33 @@ export function getCurrentRefreshToken(): string | null {
   return s?.refreshToken ?? null;
 }
 
+export function updateSessionTokens(userId: string, jwt: string, refreshToken: string) {
+  sessions = loadSessions();
+  const index = sessions.findIndex((s) => s.userId === userId);
+  if (index < 0) return;
+  sessions[index] = { ...sessions[index], jwt, refreshToken };
+  saveSessions(sessions);
+}
+
 export function updateActiveTokens(jwt: string, refreshToken: string) {
   const s = getActiveSession();
-  if (s) {
-    s.jwt = jwt;
-    s.refreshToken = refreshToken;
-    saveSessions(sessions);
+  if (s) updateSessionTokens(s.userId, jwt, refreshToken);
+}
+
+function removeSessionByUserId(userId: string) {
+  sessions = loadSessions();
+  const index = sessions.findIndex((s) => s.userId === userId);
+  if (index < 0) return;
+
+  sessions.splice(index, 1);
+  activeIndex = loadActiveIndex();
+  if (index < activeIndex) {
+    activeIndex--;
+  } else if (activeIndex >= sessions.length) {
+    activeIndex = Math.max(0, sessions.length - 1);
   }
+  saveSessions(sessions);
+  localStorage.setItem('miSchedule_active', String(activeIndex));
 }
 
 export function isTokenExpiringSoon(token: string | null, skewSeconds = 60): boolean {
@@ -124,47 +157,64 @@ export function isTokenExpiringSoon(token: string | null, skewSeconds = 60): boo
   }
 }
 
-async function refreshAccessToken(): Promise<boolean> {
-  sessions = loadSessions();
-  activeIndex = loadActiveIndex();
-  const refresh = getCurrentRefreshToken();
-  if (!refresh) return false;
+async function refreshAccessToken(userId: string, expectedRefreshToken: string): Promise<boolean> {
+  return withRefreshLock(async () => {
+    sessions = loadSessions();
+    activeIndex = loadActiveIndex();
+    const session = sessions.find((s) => s.userId === userId);
+    if (!session?.refreshToken) return false;
+    if (session.refreshToken !== expectedRefreshToken) {
+      return true;
+    }
 
-  try {
-    const res = await fetch(`${API_BASE}/api/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refresh }),
-    });
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: expectedRefreshToken }),
+      });
 
-    if (res.status === 401) {
-      removeSession(activeIndex);
+      if (res.status === 401) {
+        await new Promise((r) => setTimeout(r, 200));
+        sessions = loadSessions();
+        const latest = sessions.find((s) => s.userId === userId);
+        if (latest && latest.refreshToken !== expectedRefreshToken && latest.jwt) {
+          return true;
+        }
+        removeSessionByUserId(userId);
+        return false;
+      }
+
+      if (res.status === 403) {
+        removeSessionByUserId(userId);
+        return false;
+      }
+
+      if (!res.ok) return false;
+
+      const data = await res.json();
+      updateSessionTokens(userId, data.jwt, data.refresh_token);
+      return true;
+    } catch {
       return false;
     }
-
-    if (res.status === 403) {
-      sessions = loadSessions();
-      activeIndex = loadActiveIndex();
-      const current = getCurrentAccessToken();
-      return Boolean(current && !isTokenExpiringSoon(current, 30));
-    }
-
-    if (!res.ok) return false;
-
-    const data = await res.json();
-    updateActiveTokens(data.jwt, data.refresh_token);
-    return true;
-  } catch {
-    return false;
-  }
+  });
 }
 
 export async function ensureValidToken(): Promise<boolean> {
-  if (refreshPromise) return refreshPromise;
-  refreshPromise = refreshAccessToken().finally(() => {
-    refreshPromise = null;
+  sessions = loadSessions();
+  activeIndex = loadActiveIndex();
+  const session = getActiveSession();
+  if (!session?.refreshToken) return false;
+
+  const pending = refreshPromises.get(session.userId);
+  if (pending) return pending;
+
+  const promise = refreshAccessToken(session.userId, session.refreshToken).finally(() => {
+    refreshPromises.delete(session.userId);
   });
-  return refreshPromise;
+  refreshPromises.set(session.userId, promise);
+  return promise;
 }
 
 const checkAndRefreshToken = async () => {
