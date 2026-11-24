@@ -90,6 +90,18 @@ export function UserManagePage() {
     fetchUsers(page);
   };
 
+  const handleActivate = async (u: User) => {
+    const ok = await confirm({
+      title: 'ユーザー有効化',
+      message: `${u.name} を有効化しますか？有効化後、ユーザーは再度ログインが必要です。`,
+      confirmLabel: '有効化',
+    });
+    if (!ok) return;
+
+    await api(`/admin/users/${u.id}/activate`, { method: 'PUT' });
+    fetchUsers(page);
+  };
+
   return (
     <div className="pb-24 md:pb-0">
       <PageHeader title="ユーザー管理" />
@@ -132,16 +144,24 @@ export function UserManagePage() {
                 <p className="mt-1 text-xs text-ds-text-muted break-all">
                   @{u.misskey_username}@{u.misskey_host}
                 </p>
-                {!u.is_admin && (
+                {(!u.is_admin || !u.is_active) && (
                   <div className="mt-3 flex gap-2 border-t-[0.5px] border-ds-border pt-3">
-                    {u.is_active && (
-                      <Button variant="secondary" size="sm" onClick={() => handleDeactivate(u)}>
-                        無効化
+                    {u.is_active ? (
+                      !u.is_admin && (
+                        <Button variant="secondary" size="sm" onClick={() => handleDeactivate(u)}>
+                          無効化
+                        </Button>
+                      )
+                    ) : (
+                      <Button variant="secondary" size="sm" onClick={() => handleActivate(u)}>
+                        有効化
                       </Button>
                     )}
-                    <Button variant="danger" size="sm" onClick={() => handleDelete(u)}>
-                      削除
-                    </Button>
+                    {!u.is_admin && (
+                      <Button variant="danger" size="sm" onClick={() => handleDelete(u)}>
+                        削除
+                      </Button>
+                    )}
                   </div>
                 )}
               </Panel>
@@ -181,20 +201,32 @@ export function UserManagePage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {!u.is_admin && (
+                        {(!u.is_admin || !u.is_active) && (
                           <div className="flex gap-2">
-                            {u.is_active && (
+                            {u.is_active ? (
+                              !u.is_admin && (
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => handleDeactivate(u)}
+                                >
+                                  無効化
+                                </Button>
+                              )
+                            ) : (
                               <Button
                                 variant="secondary"
                                 size="sm"
-                                onClick={() => handleDeactivate(u)}
+                                onClick={() => handleActivate(u)}
                               >
-                                無効化
+                                有効化
                               </Button>
                             )}
-                            <Button variant="danger" size="sm" onClick={() => handleDelete(u)}>
-                              削除
-                            </Button>
+                            {!u.is_admin && (
+                              <Button variant="danger" size="sm" onClick={() => handleDelete(u)}>
+                                削除
+                              </Button>
+                            )}
                           </div>
                         )}
                       </TableCell>
